@@ -1,4 +1,7 @@
 import os.path
+import socket
+import threading
+
 
 # começa a correr quando a outra da start
 # primeiro da parse do ficheiro para saber o ip e o seu tipo
@@ -16,7 +19,7 @@ def interfaceCliente_1():
     print("########################################")
     return input("Option: ")
 
-def ClienteMenu():
+def clienteMenu():
     option = interfaceCliente_1()
     if option == 1:
         #pedido ao RP daquilo que ele tem la
@@ -45,12 +48,54 @@ def interfaceServidor_1():
 def valida_ficheiro(file):
     return os.path.isfile(file)
 
-def ServidorMenu():
+def servidorMenu():
     file = interfaceServidor_1()
     while not valida_ficheiro(file):
         file = interfaceServidor_1()
     #transmitir o conteudo em unicast para o RP
+    #verificar que o Rp recebeu
 
+
+def FuncaoType(NodeData):
+    # cliente
+    if NodeData.type == 1:
+        clienteMenu()
+
+    #servidor
+    elif NodeData.type == 2:
+        servidorMenu()
+
+    #RP
+    elif NodeData.type == 3:
+        #fazer flush
+        #registar todos os caminhos por ordem de menor salto
+        #ficar à espera de comunicaçao cliente ou Servidor
+
+def linktest(ipDest, porta):
+    try:
+        # criar socket
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Conectar um nó ao outro
+        client_socket.connect((ipDest, porta))
+        # envia mensagem de teste de connectiviade
+        mensagem = "Connection test"
+        client_socket.sendall(mensagem.encode('utf-8'))
+        # resposta do outro no
+        resposta = client_socket.recv(1024).decode('utf-8')
+        # fechar conecçao
+        client_socket.close()
+
+        return resposta
+    except Exception as e:
+        return f"Erro: {str(e)}"
+
+def ConnectionTest(NodeData):
+    porta = 9998
+    for node in NodeData.adjacentes:
+        resposta = linktest(node, porta)
+        if not resposta:
+            return False
+    return True
 
 
 def main():
@@ -61,16 +106,19 @@ def main():
     # e outra para se ele for um tipo de alguma coisa fazer o que é suposto fazer
     # esta ultima thread pode morrer se ele nao tiver tipo para nao estar sempre sem fazer nada
 
-    #cliente
-    if NodeData.type == 1:
-        ClienteMenu()
+    # uma Thread
+    if NodeData.type != 0:
+        threading.Thread(target=FuncaoType, args=NodeData)
 
-    #servidor
-    elif NodeData.type == 2:
-        ServidorMenu()
+    # uma Thread
+    # flush inicial para garantir conectividade com os nos adjacentes tcp
+    # recebe uma mensagem a dizer que esta conectado
+    if not ConnectionTest(NodeData):
+        return f"Erro: IP-{str(NodeData.ip)} erro ao connectar aos seus vizinhos"
 
-    #RP
-    elif NodeData.type == 3:
-        #fazer flush
-        #registar todos os caminhos
-        #ficar à espera de comunicaçao cliente ou Servidor
+    # espera receber uma mensagem com o destino e o conteudo que tem de enviar
+    #TCP
+
+    # envia o conteudo para esse destino
+    # guard a info do que esta a partilhar
+

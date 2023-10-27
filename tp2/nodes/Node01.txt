@@ -1,0 +1,10 @@
+# ip
+#_____
+#tipo(Cliente/RP/Servidor)
+#_____
+#RP ip
+#____
+#nos adjacentes
+#nos adjacentes
+#nos adjacentes
+#_____
