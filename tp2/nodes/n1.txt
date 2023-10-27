@@ -1,0 +1,6 @@
+10.0.0.21
+Cliente
+1231.31.21.1
+noadj1
+noadj2
+noadj3
