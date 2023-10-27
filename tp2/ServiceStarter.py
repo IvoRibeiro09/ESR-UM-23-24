@@ -1,7 +1,5 @@
 import os
-
-
-
+import subprocess
 
 # ciclo que itera sobre os N nodos que temos na rede overlay e abre uma
 # bash para cada uma correr a (NodeOverlay.py ficheiroParse)
@@ -20,6 +18,7 @@ def main():
             print(comando_bash)
 
             # abrir um novo terminal e executa o comando
+            #subprocess.call(['gnome-terminal', '-x', f'{comando_bash}'])
             os.system(f"gnome-terminal -- /bin/bash -c '{comando_bash}; read -p \"Press Enter to exit\"'")
 
         else:

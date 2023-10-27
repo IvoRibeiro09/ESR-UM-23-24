@@ -21,6 +21,7 @@ def interfaceCliente_1():
     print("########################################")
     return input("Option: ")
 
+
 def clienteMenu():
     option = interfaceCliente_1()
     if option == 1:
@@ -49,8 +50,10 @@ def interfaceServidor_1():
     print("########################################")
     return input("Option: ")
 
+
 def valida_ficheiro(file):
     return os.path.isfile(file)
+
 
 def servidorMenu():
     file = interfaceServidor_1()
@@ -76,6 +79,7 @@ def FuncaoType(NodeData):
         #registar todos os caminhos por ordem de menor salto
         #ficar à espera de comunicaçao cliente ou Servidor
 
+
 def linktest(ipDest, porta):
     try:
         # criar socket
@@ -94,38 +98,46 @@ def linktest(ipDest, porta):
     except Exception as e:
         return f"Erro: {str(e)}"
 
+
 def ConnectionTest(NodeData):
     porta = 9998
-    for node in NodeData.adjacentes:
+    for node in NodeData.nosadjacentes:
         resposta = linktest(node, porta)
+        print(f"Connection test enviada ao IP:{node} com Resposta: {resposta}")
         if not resposta:
             return False
     return True
 
+
 def ReciveTest(ip, porta):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((ip, porta))
-        s.listen(1)
-        print(f"Waiting for a connection on {ip}:{porta}...")
-        conn, addr = s.accept()
-        with conn:
-            print(f"Connected by {addr}")
-            data = conn.recv(1024).decode()
-            print(f"Received message: {data}")
-            acknowledgment = "Received and acknowledged!"
-            conn.send(acknowledgment.encode())
-            print(f"Sent acknowledgment: {acknowledgment}")
+    try:
+        print("aqui")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            print((ip, porta))
+            s.bind((ip, porta))
+            s.listen(1)
+            print(f"Waiting for a connection on {ip}:{porta}...")
+            conn, addr = s.accept()
+            with conn:
+                print(f"Connected by {addr}")
+                data = conn.recv(1024).decode()
+                print(f"Received message: {data}")
+                acknowledgment = "Received and acknowledged!"
+                conn.send(acknowledgment.encode())
+                print(f"Sent acknowledgment: {acknowledgment}")
+    except socket.gaierror as e:
+        print(f"Socket error: {e}")
 
 
 def main(file):
-
     Node_Data = NodeData()
     Node_Data.parse_file(file)
     Node_Data.tostring()
     porta = 9998
 
     #teste de conectividade
-    threading.Thread(target=ReciveTest, args=(Node_Data.ip, porta))
+    thread0 = threading.Thread(target=ReciveTest, args=(Node_Data.ip, porta))
+    thread0.start()
     # flush inicial para garantir conectividade com os nos adjacentes tcp
     # recebe uma mensagem a dizer que esta conectado
     if not ConnectionTest(Node_Data):
@@ -146,6 +158,7 @@ def main(file):
 
     # envia o conteudo para esse destino
     # guard a info do que esta a partilhar
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
