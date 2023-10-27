@@ -1,6 +1,8 @@
 import os.path
 import socket
 import threading
+import sys
+from NodeData import *
 
 
 # começa a correr quando a outra da start
@@ -22,6 +24,7 @@ def interfaceCliente_1():
 def clienteMenu():
     option = interfaceCliente_1()
     if option == 1:
+        return
         #pedido ao RP daquilo que ele tem la
         #receber a info do RP
 
@@ -30,6 +33,7 @@ def clienteMenu():
         #pedido ao RP daquilo que ele quer ver
         #começar a transmissao
     else:
+        return
         #nao sei se tem de fazer mais alguma coisa para alem disto
         #por exemplo pode desligar e este nodo fico apenas como nodo
         # na rede overlay e deixa de ser nodo e cliente
@@ -67,6 +71,7 @@ def FuncaoType(NodeData):
 
     #RP
     elif NodeData.type == 3:
+        return
         #fazer flush
         #registar todos os caminhos por ordem de menor salto
         #ficar à espera de comunicaçao cliente ou Servidor
@@ -97,24 +102,44 @@ def ConnectionTest(NodeData):
             return False
     return True
 
+def ReciveTest(ip, porta):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((ip, porta))
+        s.listen(1)
+        print(f"Waiting for a connection on {ip}:{porta}...")
+        conn, addr = s.accept()
+        with conn:
+            print(f"Connected by {addr}")
+            data = conn.recv(1024).decode()
+            print(f"Received message: {data}")
+            acknowledgment = "Received and acknowledged!"
+            conn.send(acknowledgment.encode())
+            print(f"Sent acknowledgment: {acknowledgment}")
 
-def main():
 
-    NodeData = parse(file)
+def main(file):
+
+    Node_Data = NodeData()
+    Node_Data.parse_file(file)
+    Node_Data.tostring()
+    porta = 9998
+
+    #teste de conectividade
+    threading.Thread(target=ReciveTest, args=(Node_Data.ip, porta))
+    # flush inicial para garantir conectividade com os nos adjacentes tcp
+    # recebe uma mensagem a dizer que esta conectado
+    if not ConnectionTest(Node_Data):
+        return f"Erro: IP-{str(Node_Data.ip)} erro ao connectar aos seus vizinhos"
 
     # iniciar duas threads uma para gerir a funçao de No de cada no
     # e outra para se ele for um tipo de alguma coisa fazer o que é suposto fazer
     # esta ultima thread pode morrer se ele nao tiver tipo para nao estar sempre sem fazer nada
 
     # uma Thread
-    if NodeData.type != 0:
-        threading.Thread(target=FuncaoType, args=NodeData)
+    if Node_Data.type != 0:
+        threading.Thread(target=FuncaoType, args=Node_Data)
 
     # uma Thread
-    # flush inicial para garantir conectividade com os nos adjacentes tcp
-    # recebe uma mensagem a dizer que esta conectado
-    if not ConnectionTest(NodeData):
-        return f"Erro: IP-{str(NodeData.ip)} erro ao connectar aos seus vizinhos"
 
     # espera receber uma mensagem com o destino e o conteudo que tem de enviar
     #TCP
@@ -122,3 +147,9 @@ def main():
     # envia o conteudo para esse destino
     # guard a info do que esta a partilhar
 
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        argumento = sys.argv[1]
+        main(argumento)
+    else:
+        print("ERROR: Nenhum argumento passado à função NodeOverlay.py!!")
