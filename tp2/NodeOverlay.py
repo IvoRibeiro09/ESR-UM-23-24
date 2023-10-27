@@ -80,18 +80,18 @@ def FuncaoType(NodeData):
         #ficar à espera de comunicaçao cliente ou Servidor
 
 
-def linktest(ipDest, porta):
+def linktest(ip, ipDest, porta):
     try:
-        # criar socket
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # Conectar um nó ao outro
+        # Connect to the destination IP and port
         client_socket.connect((ipDest, porta))
-        # envia mensagem de teste de connectiviade
+
+        # Send a test message for connectivity
         mensagem = "Connection test"
         client_socket.sendall(mensagem.encode('utf-8'))
-        # resposta do outro no
-        resposta = client_socket.recv(1024).decode('utf-8')
-        # fechar conecçao
+
+        # aguarda a resposta
+        resposta = client_socket.recv(1024).decode()
         client_socket.close()
 
         return resposta
@@ -102,7 +102,7 @@ def linktest(ipDest, porta):
 def ConnectionTest(NodeData):
     porta = 9998
     for node in NodeData.nosadjacentes:
-        resposta = linktest(node, porta)
+        resposta = linktest(NodeData.ip, node, porta)
         print(f"Connection test enviada ao IP:{node} com Resposta: {resposta}")
         if not resposta:
             return False
@@ -111,20 +111,18 @@ def ConnectionTest(NodeData):
 
 def ReciveTest(ip, porta):
     try:
-        print("aqui")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            print((ip, porta))
             s.bind((ip, porta))
             s.listen(1)
-            print(f"Waiting for a connection on {ip}:{porta}...")
+            print(f"Espera uma conexão de teste no {ip}:{porta}...")
             conn, addr = s.accept()
             with conn:
-                print(f"Connected by {addr}")
                 data = conn.recv(1024).decode()
-                print(f"Received message: {data}")
-                acknowledgment = "Received and acknowledged!"
-                conn.send(acknowledgment.encode())
-                print(f"Sent acknowledgment: {acknowledgment}")
+                if data == "Connection test":
+                    print("Resposta de conexão enviada ao: ", addr)
+                    acknowledgment = "Received and acknowledged!"
+                    conn.send(acknowledgment.encode())
+        s.close()
     except socket.gaierror as e:
         print(f"Socket error: {e}")
 
