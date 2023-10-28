@@ -7,20 +7,22 @@ def main(file):
     Node_Data.parse_file(file)
     Node_Data.tostring()
 
-    server_host = "127.0.0.1"
-    porta = 3000
+    server_host = "127.0.0.2"
+    porta = 4000
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     client_socket.connect((server_host, porta))
-    
-    message = client_socket.recv(1024)
-    message = client_socket.recv(1024)
-    print(f"Recebido do servidor: {message.decode()}")
+    i = 0
+    while i < 5:
+        message = client_socket.recv(1024)
+        print(f"Recebido do servidor: {message.decode()}")
 
-    # Responde com uma mensagem afirmativa
-    response = "Conectividade confirmada"
-    client_socket.send(response.encode())
+        # Responde com uma mensagem afirmativa
+        response = "Conectividade confirmada"
+        client_socket.send(response.encode())
+        i+=1
+        
 
     # Fecha o socket do cliente
     client_socket.close()
