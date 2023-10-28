@@ -1,0 +1,22 @@
+import socket
+
+# Configurações do cliente
+server_host = '127.0.0.1'  # Endereço IP do servidor
+server_port = 12345        # Porta do servidor
+
+# Cria um socket do tipo cliente
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Conecta ao servidor
+client_socket.connect((server_host, server_port))
+
+# Recebe a mensagem de teste de conectividade do servidor
+message = client_socket.recv(1024)
+print(f"Recebido do servidor: {message.decode()}")
+
+# Responde com uma mensagem afirmativa
+response = "Conectividade confirmada"
+client_socket.send(response.encode())
+
+# Fecha o socket do cliente
+client_socket.close()

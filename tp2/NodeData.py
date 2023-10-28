@@ -1,6 +1,7 @@
 class NodeData:
     def __init__(self):
         self.ip = ""
+        self.porta = ""
         self.type = ""
         self.rp_ip = ""
         self.nosadjacentes = []
@@ -8,6 +9,9 @@ class NodeData:
     # Getters
     def getip(self):
         return str(self.ip)
+
+    def getporta(self):
+        return str(self.porta)
 
     def gettype(self):
         return str(self.type)
@@ -21,6 +25,9 @@ class NodeData:
     # Setters
     def setip(self, ip):
         self.ip = ip
+
+    def setporta(self, porta):
+        self.porta = porta
 
     def setype(self, type):
         self.type = type
@@ -40,7 +47,9 @@ class NodeData:
         for i in file:
             counter += 1
             if counter == 1:
-                self.setip(i.strip("\n"))
+                ip_porta = i.strip("\n").split()
+                self.setip(ip_porta[0])
+                self.setporta(ip_porta[1])
             elif counter == 2:
                 self.setype(i.strip("\n"))
             elif counter == 3:
@@ -51,6 +60,7 @@ class NodeData:
     def tostring(self):
         print("-----------------------------------------------")
         print("IP: " + self.ip)
+        print("Porta: "+ self.porta)
         print("Type: " + self.type)
         print("RP IP: " + self.rp_ip)
         for i in self.nosadjacentes:
