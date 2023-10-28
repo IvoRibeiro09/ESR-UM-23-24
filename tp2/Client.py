@@ -8,7 +8,7 @@ def main(file):
     Node_Data.tostring()
 
     server_host = "127.0.0.2"
-    porta = 4000
+    porta = 3000
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

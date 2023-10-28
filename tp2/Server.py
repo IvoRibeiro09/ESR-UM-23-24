@@ -52,11 +52,9 @@ def main(file):
     host = "127.0.0.2"
     
     for porta in portas:
-        thread = threading.Thread(target=openServerSocket, args=(host, portas))
-    #thread1 = threading.Thread(target=openServerSocket, args=(host, portas[1]))
+        thread = threading.Thread(target=openServerSocket, args=(host, porta))
         thread.start()
-    #thread1.start()
-
+  
 
 
 if __name__ == "__main__":
