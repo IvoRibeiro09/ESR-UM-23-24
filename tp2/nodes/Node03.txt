@@ -1,10 +1,10 @@
 ---TYPE---
-Servidor
+Client
 ---HOST_IP---
-127.0.0.5 
+127.0.0.6 
 ---RP_IP---
-127.0.0.1
+127.0.0.2
 ---RP_PORTA---
 12345
 ---NEIGHBOURS_NODES---
-127.0.0.1
+127.0.0.2

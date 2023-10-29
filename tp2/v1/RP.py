@@ -4,7 +4,7 @@ import socket
 from NodeData import *
 from time import sleep
 
-global_data = ["olllllll", "olalal", "oalalalalal", "oalajjahja"]
+global_data = []
 #lock = threading.Lock()  # Um lock para garantir acesso seguro às variáveis globais
 
 
@@ -62,21 +62,7 @@ def client_handler(client_socket):
 
     client_socket.close()
 
-
-def main(file):
-    Node_Data = NodeData()
-    Node_Data.parse_file(file)
-    Node_Data.tostring()
-
-    # Abrir uma porta de escuta
-    porta = 12345
-    host = "127.0.0.1"
-    
-    thread = threading.Thread(target=openServerSocket, args=(host, porta))
-    thread.start()
-
-    porta = 12346
-    host = "127.0.0.4"
+def openClientSocket(host, porta):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, porta))
 
@@ -89,6 +75,25 @@ def main(file):
     # Inicia uma thread para lidar com o cliente
     thread0 = threading.Thread(target=client_handler, args=(client_socket,))
     thread0.start()
+
+
+def main(file):
+    Node_Data = NodeData()
+    Node_Data.parse_file(file)
+    Node_Data.tostring()
+
+    # Abrir uma porta de escuta
+    portaDeEscuta = Node_Data.portaEscuta
+    ipDeEscutaDeServer = Node_Data.ip
+    
+    thread = threading.Thread(target=openServerSocket, args=(ipDeEscutaDeServer, portaDeEscuta))
+    thread.start()
+
+    # porta = 12346
+    # host = "127.0.0.4"
+    for neigh in Node_Data.neighboursNodes:
+        thread = threading.Thread(target=openClientSocket, args=(neigh, portaDeEscuta))
+        thread.start()
 
 
 if __name__ == "__main__":

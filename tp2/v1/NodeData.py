@@ -1,68 +1,88 @@
 class NodeData:
     def __init__(self):
-        self.ip = ""
-        self.porta = ""
-        self.type = ""
-        self.rp_ip = ""
-        self.nosadjacentes = []
+        self.type = None
+        self.ip = None
+        self.portaEscuta = None
+        self.RP_IP = None
+        self.RP_PORTA = None
+        self.neighboursNodes = []
 
     # Getters
+    def gettype(self):
+        return str(self.type)
+    
     def getip(self):
         return str(self.ip)
 
-    def getporta(self):
-        return str(self.porta)
-
-    def gettype(self):
-        return str(self.type)
+    def getportaEscuta(self):
+        return str(self.portaEscuta)
 
     def getrp_ip(self):
-        return str(self.rp_ip)
+        return str(self.RP_IP)
+    
+    def getrp_porta(self):
+        return str(self.RP_PORTA)
 
-    def getnosajd(self):
-        return str(self.nosadjacentes)
+    def getneighbours(self):
+        return str(self.neighboursNodes)
 
     # Setters
+    def settype(self, type):
+        self.type = type
+
     def setip(self, ip):
         self.ip = ip
 
-    def setporta(self, porta):
-        self.porta = porta
-
-    def setype(self, type):
-        self.type = type
+    def setportaEscuta(self, porta):
+        self.portaEscuta = porta
 
     def setrp_ip(self, rp_ip):
-        self.rp_ip = rp_ip
+        self.RP_IP = rp_ip
 
-    def setnosajd(self, adjacentes):
-        self.nosadjacentes = adjacentes
+    def setrp_porta(self, rp_porta):
+        self.RP_PORTA = rp_porta
 
-    def addNode(self, node):
-        self.nosadjacentes.append(node)
+    def setneighbours(self, neigh):
+        self.neighboursNodes.append(neigh)
 
+    # parser    
     def parse_file(self, filepath):
         file = open(filepath)
-        counter = 0
-        for i in file:
-            counter += 1
-            if counter == 1:
-                ip_porta = i.strip("\n").split()
-                self.setip(ip_porta[0])
-                self.setporta(ip_porta[1])
-            elif counter == 2:
-                self.setype(i.strip("\n"))
-            elif counter == 3:
-                self.setrp_ip(i.strip("\n"))
-            else:
-                self.addNode(i.strip("\n"))
+        lines = file.readlines()
 
+        # Process each line and extract the host_ip value
+        for index, line in enumerate(lines):
+            if '---TYPE---' in line:
+                if index + 1 < len(lines):
+                    self.settype(lines[index + 1].strip())
+            elif '---HOST_IP---' in line:
+                if index + 1 < len(lines):
+                    self.setip(lines[index + 1].strip())
+            elif '---PORTA_DE_ESCUTA---' in line:
+                if index + 1 < len(lines):
+                    self.setportaEscuta(lines[index + 1].strip())
+            elif '---RP_IP---' in line:
+                if index + 1 < len(lines):
+                    self.setrp_ip(lines[index + 1].strip())
+            elif '---RP_PORTA---' in line:
+                if index + 1 < len(lines):
+                    self.setrp_porta(lines[index + 1].strip())
+            elif '---NEIGHBOURS_NODES---' in line:
+                while index + 1 < len(lines):
+                    self.setneighbours(lines[index + 1].strip())
+                    index += 1
+
+    # print
     def tostring(self):
         print("-----------------------------------------------")
-        print("IP: " + self.ip)
-        print("Porta: "+ self.porta)
-        print("Type: " + self.type)
-        print("RP IP: " + self.rp_ip)
-        for i in self.nosadjacentes:
-            print("Nó Adjacente: " + i)
+        print("Type: " + str(self.type))
+        print("IP: " + str(self.ip))
+        if self.portaEscuta:
+            print("Porta Escuta: " + str(self.portaEscuta))
+        if self.RP_IP:
+            print("RP IP: " + str(self.RP_IP))
+        if self.RP_PORTA:
+            print("RP Porta: " + str(self.RP_PORTA))
+        for i in self.neighboursNodes:
+            print("Nó Adjacente: " + str(i))
         print("-----------------------------------------------")

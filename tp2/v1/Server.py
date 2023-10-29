@@ -8,12 +8,9 @@ def main(file):
     Node_Data.parse_file(file)
     Node_Data.tostring()
 
-    RP_host = "127.0.0.1"
-    porta = 12345
-
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    client_socket.connect((RP_host, porta))
+    client_socket.connect((Node_Data.RP_IP, Node_Data.RP_PORTA))
     print("Servidor connectado ao RP!!!")
     # Servidor envia os dados que pretende ao RP
     i = 0
