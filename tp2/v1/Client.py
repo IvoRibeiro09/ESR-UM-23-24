@@ -8,11 +8,11 @@ def main(file):
     Node_Data.parse_file(file)
     Node_Data.tostring()
 
-    server_ip = "127.0.0.4"
-    server_port = 12346
+    
+    bindAddress = (Node_Data.RP_IP, int(Node_Data.RP_PORTA))
 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((server_ip, server_port))
+    client_socket.connect(bindAddress)
 
     while True:
         mensagem = client_socket.recv(1024).decode()

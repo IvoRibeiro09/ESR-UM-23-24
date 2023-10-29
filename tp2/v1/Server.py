@@ -8,14 +8,16 @@ def main(file):
     Node_Data.parse_file(file)
     Node_Data.tostring()
 
+    bindAddress = (Node_Data.RP_IP, int(Node_Data.RP_PORTA))
+
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    client_socket.connect((Node_Data.RP_IP, Node_Data.RP_PORTA))
+    client_socket.connect(bindAddress)
     print("Servidor connectado ao RP!!!")
     # Servidor envia os dados que pretende ao RP
     i = 0
     while i < 25:
-        response = "Connection test"
+        response = f"Connection test-{i}"
         client_socket.send(response.encode())
         print(f"Servidor envou ao RP: {response}")
         i+=1

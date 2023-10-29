@@ -45,8 +45,8 @@ def connectionAcception(client_socket, client_address):
 def client_handler(client_socket):
     while True:
         # Define a mensagem a ser enviada aos clientes
-    #    with lock:
-        data = global_data.pop()
+        # with lock:
+        data = global_data[-1]
         print("data--" + data)
         client_socket.send(data.encode())
 
@@ -69,12 +69,18 @@ def openClientSocket(host, porta):
     # esperar conexão
     server_socket.listen(1)
     print(f"Nodo {host} aguadar conexões na porta:{porta}")
+    while True:
+        try:
+            # Aceita a conexão do cliente
+            client_socket, client_address = server_socket.accept()
+            # Inicia uma thread para lidar com o cliente
+            thread0 = threading.Thread(target=client_handler, args=(client_socket,))
+            thread0.start()
 
-
-    client_socket, client_address = server_socket.accept()
-    # Inicia uma thread para lidar com o cliente
-    thread0 = threading.Thread(target=client_handler, args=(client_socket,))
-    thread0.start()
+        except Exception as e:
+            server_socket.close()
+            print(f"Erro: {str(e)}")
+            return 
 
 
 def main(file):
@@ -83,7 +89,7 @@ def main(file):
     Node_Data.tostring()
 
     # Abrir uma porta de escuta
-    portaDeEscuta = Node_Data.portaEscuta
+    portaDeEscuta = int(Node_Data.portaEscuta)
     ipDeEscutaDeServer = Node_Data.ip
     
     thread = threading.Thread(target=openServerSocket, args=(ipDeEscutaDeServer, portaDeEscuta))
