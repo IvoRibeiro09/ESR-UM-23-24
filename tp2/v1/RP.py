@@ -101,8 +101,6 @@ def main(file):
     thread = threading.Thread(target=openServerSocket, args=(message_event, event, ipDeEscutaDeServer, portaDeEscuta))
     thread.start()
 
-    # porta = 12346
-    # host = "127.0.0.4"
     for neigh in Node_Data.neighboursNodes:
         thread = threading.Thread(target=openClientSocket, args=(message_event, event, neigh, portaDeEscuta))
         thread.start()

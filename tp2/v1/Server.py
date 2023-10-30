@@ -3,6 +3,9 @@ import sys
 from NodeData import *
 from time import sleep
 
+def openServerOutput(): 
+    return 
+
 def main(file):
     Node_Data = NodeData()
     Node_Data.parse_file(file)

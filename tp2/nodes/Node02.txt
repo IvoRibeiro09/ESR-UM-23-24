@@ -6,5 +6,6 @@ Servidor
 127.0.0.1
 ---RP_PORTA---
 12345
+12346
 ---NEIGHBOURS_NODES---
 127.0.0.1
