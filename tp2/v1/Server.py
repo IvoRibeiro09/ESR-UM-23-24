@@ -3,6 +3,9 @@ import sys
 from NodeData import *
 from time import sleep
 import threading
+import cv2
+import pickle
+import struct
 
 def interfaceServidor_1():
     print("########################################")
@@ -25,11 +28,11 @@ def getPorta():
     return input("PORTA: ")
 
 def openServerOutput(ip, porta): 
-    bindAddress = (ip, porta)
+    bindAddress = (ip, int(porta))
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     client_socket.connect(bindAddress)
-    print("Servidor connectado ao RP!!!")
+    print(f"Servidor connectado ao RP na Porta: {porta}!!!")
     # Servidor envia os dados que pretende ao RP
     i = 0
     while i < 50:
@@ -40,6 +43,34 @@ def openServerOutput(ip, porta):
         sleep(1)
     # Fecha o socket do cliente
     client_socket.close()
+
+
+def streamCam(ip, porta):
+    # usar a camara
+    camara = cv2.VideoCapture(0) 
+
+    #iniciar o socket do servidor
+    bindAddress = (ip, int(porta))
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    serverSocket.connect(bindAddress)
+    print(f"Servidor connectado ao RP na Porta: {porta}!!!")
+
+    # enviar os dados da camara
+    try:
+        while True:
+            ret, frame = camara.read()
+            data = pickle.dumps(frame)
+            message_size = struct.pack("L", len(data))
+
+            # Envie o tamanho da mensagem
+            serverSocket.sendall(message_size)
+
+            # Envie os dados do quadro
+            serverSocket.sendall(data)
+    finally:
+        camara.release()
+        serverSocket.close()
 
 
 def main(file):
@@ -53,10 +84,12 @@ def main(file):
         opcao = interfaceServidor_1()
         porta = getPorta()
         if opcao == "1":
-            thread = threading.Thread(target=openServerOutput, args=(Node_Data.RP_IP, int(porta)))
+            thread = threading.Thread(target=openServerOutput, args=(Node_Data.RP_IP, porta))
             thread.start()
         elif opcao == "2":
             #video stream 
+            thread = threading.Thread(target=streamCam, args=(Node_Data.RP_IP, porta))
+            thread.start()
             return 
         elif opcao == "3":
             #close threads 

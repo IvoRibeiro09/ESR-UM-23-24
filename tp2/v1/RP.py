@@ -4,6 +4,9 @@ import socket
 from NodeData import *
 from time import sleep
 import queue
+import pickle
+import cv2
+import struct
 
 #global_data = []
 #lock = threading.Lock()  # Um lock para garantir acesso seguro às variáveis globais
@@ -28,8 +31,9 @@ def openServerSocket(q, event, serverIp, porta):
     server_socket.bind((serverIp, porta))
 
     # esperar conexão
-    server_socket.listen(1)
+    server_socket.listen(5)
     print(f"Nodo {serverIp} aguadar conexões na porta:{porta}")
+    # Inicialize a captura de vídeo com OpenCV
     while True:
         try:
             # Aceita a conexão do cliente
