@@ -21,7 +21,7 @@ def main(file):
         client_socket.send(response.encode())
         print(f"Servidor envou ao RP: {response}")
         i+=1
-        sleep(6)
+        sleep(3)
     # Fecha o socket do cliente
     client_socket.close()
 

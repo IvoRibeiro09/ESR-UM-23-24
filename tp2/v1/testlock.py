@@ -6,6 +6,7 @@ def thread1(q, event):
         message = input("Thread 1: Digite uma mensagem (ou 'q' para sair): ")
         if message == 'q':
             break
+        q.clear()
         q.put(message)  # Coloca a mensagem na fila
         event.set()     # Sinaliza que há uma mensagem na fila
 

@@ -3,13 +3,27 @@ import threading
 import socket
 from NodeData import *
 from time import sleep
+import queue
 
-global_data = []
+#global_data = []
 #lock = threading.Lock()  # Um lock para garantir acesso seguro às variáveis globais
 
+def connectionAcception(q, event, client_socket, client_address):
+    while True:
+        resposta = client_socket.recv(1024).decode()
+        if not resposta:
+            # If the received message is empty, it means the client closed the connection
+            print(f"Connection closed by {client_address}")
+            break
+        #global_data.append(resposta)
+        q.put(resposta)
+        event.set()
+        print(f"Received:\"{resposta}\" from IP:{client_address}")
+      
+    client_socket.close()
 
 
-def openServerSocket(serverIp, porta):
+def openServerSocket(q, event, serverIp, porta):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((serverIp, porta))
 
@@ -21,7 +35,7 @@ def openServerSocket(serverIp, porta):
             # Aceita a conexão do cliente
             client_socket, client_address = server_socket.accept()
             # dedica uma thread a esse cliente
-            thread0 = threading.Thread(target=connectionAcception, args=(client_socket,client_address))
+            thread0 = threading.Thread(target=connectionAcception, args=(q,event, client_socket,client_address))
             thread0.start()
 
         except Exception as e:
@@ -30,27 +44,17 @@ def openServerSocket(serverIp, porta):
             return 
 
 
-def connectionAcception(client_socket, client_address):
-    while True:
-        resposta = client_socket.recv(1024).decode()
-        if not resposta:
-            # If the received message is empty, it means the client closed the connection
-            print(f"Connection closed by {client_address}")
-            break
-        global_data.append(resposta)
-        print(f"Received:\"{resposta}\" from IP:{client_address}")
-      
-    client_socket.close()
-
-
-def client_handler(client_socket):
+def client_handler(q, event, client_socket):
+    while not q.empty():
+        message = q.get()
+        #print("Mensagem enviada ao cliente: ", message)
     while True:
         # Define a mensagem a ser enviada aos clientes
-        # with lock:
-        data = global_data[-1]
-        print("data--" + data)
-        client_socket.send(data.encode())
-
+        event.wait()
+        message = q.get()  # Obtém a mensagem da fila
+        event.clear()  # Limpa o sinal
+        client_socket.send(message.encode())
+        print("Mensagem enviada ao cliente: ", message)
         try:
             resposta = client_socket.recv(1024)
             if resposta.decode() == "Confirmado":
@@ -58,12 +62,10 @@ def client_handler(client_socket):
         except ConnectionResetError:
             # Cliente desconectado
             break
-
-        sleep(6)
-
     client_socket.close()
 
-def openClientSocket(host, porta):
+
+def openClientSocket(q, event, host, porta):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, porta))
 
@@ -75,7 +77,7 @@ def openClientSocket(host, porta):
             # Aceita a conexão do cliente
             client_socket, client_address = server_socket.accept()
             # Inicia uma thread para lidar com o cliente
-            thread0 = threading.Thread(target=client_handler, args=(client_socket,))
+            thread0 = threading.Thread(target=client_handler, args=(q, event, client_socket,))
             thread0.start()
 
         except Exception as e:
@@ -92,14 +94,17 @@ def main(file):
     # Abrir uma porta de escuta
     portaDeEscuta = int(Node_Data.portaEscuta)
     ipDeEscutaDeServer = Node_Data.ip
+
+    message_event = queue.Queue()
+    event = threading.Event()
     
-    thread = threading.Thread(target=openServerSocket, args=(ipDeEscutaDeServer, portaDeEscuta))
+    thread = threading.Thread(target=openServerSocket, args=(message_event, event, ipDeEscutaDeServer, portaDeEscuta))
     thread.start()
 
     # porta = 12346
     # host = "127.0.0.4"
     for neigh in Node_Data.neighboursNodes:
-        thread = threading.Thread(target=openClientSocket, args=(neigh, portaDeEscuta))
+        thread = threading.Thread(target=openClientSocket, args=(message_event, event, neigh, portaDeEscuta))
         thread.start()
 
 
