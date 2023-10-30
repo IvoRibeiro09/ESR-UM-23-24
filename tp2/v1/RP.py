@@ -8,6 +8,7 @@ global_data = []
 #lock = threading.Lock()  # Um lock para garantir acesso seguro às variáveis globais
 
 
+
 def openServerSocket(serverIp, porta):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((serverIp, porta))
