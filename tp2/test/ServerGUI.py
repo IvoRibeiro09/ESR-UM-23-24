@@ -3,6 +3,7 @@ import imutils
 import cv2
 import threading
 from tkinter import *
+from PIL import Image, ImageTk
 
 class ServerGUI:
 	
@@ -51,18 +52,37 @@ class ServerGUI:
         self.client_socket.connect(self.client_address)
         print("Servidor connectado ao RP: ", self.client_address)
 
-    #def startStream(self):
     def playMovie(self):
         print("Streaming")
+        # abrir o ficheiro de streaming
         video_stream = cv2.VideoCapture("../VIDEO/video.mp4")
+        if not video_stream.isOpened():
+            print("Não é possivel abrir o ficheiro que pretende streamar!!!")
+    
         while video_stream.isOpened():
             image, frame = video_stream.read()
-
+            if not image:
+                break
+            
+            # redimensionar o quadro para uma largura de 320 pixels 
             frame = imutils.resize(frame, width=320)
+            # O quadro é serializado em bytes para ser enviado
             a = pickle.dumps(frame)
             message = struct.pack("Q", len(a))+a
             self.client_socket.sendall(message)
+
+            # stream no servidor ao vivo caquilo que ele esta a streamar
             cv2.imshow("TRANSMITTING TO CACHE SERVER",frame)
+            # Convert the OpenCV frame to a PhotoImage to display in the Label widget
+            '''
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(frame)
+            photo = ImageTk.PhotoImage(image=pil_image)  # Create PhotoImage from the PIL Image
+
+            self.tela.config(image=photo)
+            self.tela.image = photo
+'''
+            # forçar fechar a janela
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 self.client_socket.close()
@@ -73,17 +93,3 @@ class ServerGUI:
 
     def exitClient():
         print("exit")
-'''
-    def playMovie(self):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_address = (self.rp_ip, self.rp_porta)
-        server_socket.bind(socket_address)
-        server_socket.listen()
-        print("Play movie")
-        print("Servidor à espera de conexão: ", socket_address)
-
-        client_socket, client_address = server_socket.accept()   # Aceita a conexão do cliente
-        self.client_socket = client_socket
-
-        self.startStream()
-'''
