@@ -13,7 +13,7 @@ q = queue.Queue(maxsize=10)
 
 filename =  '../VIDEO/video.mp4'
 command = "ffmpeg -i {} -ab 160k -ac 2 -ar 44100 -vn {}".format(filename,'temp.wav')
-os.system(command)
+#os.system(command)
 
 BUFF_SIZE = 65536
 server_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -96,7 +96,7 @@ def audio_stream():
 
     s.listen(5)
     CHUNK = 1024
-    wf = wave.open("temp.wav", 'rb')
+    wf = wave.open("../VIDEO/temp.wav", 'rb')
     p = pyaudio.PyAudio()
     print('server listening at',(host_ip, (port-1)))
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
