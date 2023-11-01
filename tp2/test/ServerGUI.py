@@ -20,7 +20,7 @@ class ServerGUI:
     def streamInterface(self):
         # Criar a tela de reprodução
         self.tela = Label(self.janela, height= 20)
-        self.tela.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5)
+        self.tela.pack(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5)
 
         # Butao de menu para futuras alterações 
         self.botaoSetup = Button(self.janela, width=20, padx=3, pady=3)
