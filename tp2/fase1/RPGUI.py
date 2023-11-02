@@ -9,9 +9,10 @@ class RPGUI:
         self.PORTACLIENT = portaClient
         self.PORTASERVER = portaServer
         self.socketForServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.socketForServer.bind((ip, portaServer))
         self.socketForClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.socketForClient.bind((ip, portaClient))
+        self.streamList = []
+        #self.parse()
+        self.startRP()
 
     def parse(self, file):
         with open(file, 'r') as f:
@@ -20,7 +21,9 @@ class RPGUI:
     
     def startRP(self):
         thread0 = threading.Thread(target=self.clientConnection)
+        thread1 = threading.Thread(target=self.serverConnection)
         thread0.start()
+        thread1.start()
 
     def clientConnection(self):
         socket_address = (self.IP, self.PORTACLIENT)
@@ -32,11 +35,31 @@ class RPGUI:
             print(f"Cliente {addr} conectado!")
             thread = threading.Thread(target=self.processClient, args=(conn, addr))
             thread.start()
-            #self.processClient(conn, addr)
 
     def processClient(self, conn, addr):
         print(f"Processing {addr}")
         conn.close()
+    
+    def serverConnection(self):
+        socket_address = (self.IP, self.PORTASERVER)
+        self.socketForServer.bind(socket_address)
+        self.socketForServer.listen()
+        print("RP à espera de conexões de Servidores: ", socket_address)
+        while True:
+            conn, addr = self.socketForServer.accept()
+            print(f"Servidor {addr} conectado!")
+            thread = threading.Thread(target=self.processServer, args=(conn, addr))
+            thread.start()
+
+    def processServer(self, conn, addr):
+        print(f"Processing {addr}")
+        # perguntar quais os videos que o servidor tem para transmitir
+        # receber mensagens com o nome dos videos
+        message = conn.recv(1024)
+        # Processar e responder às mensagens recebidas aqui
+        print(f"Mensagem recebida: {message.decode('utf-8')}")
+        conn.close()
+
 
 if __name__ == "__main__":
     try:
@@ -46,7 +69,5 @@ if __name__ == "__main__":
 
         # Criar um RP
         rp = RPGUI(ip, portaClient, portaServer)
-        # rp.parse(file)
-        rp.startRP()
     except:
         print("[Usage: RP.py]\n")	
