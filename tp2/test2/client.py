@@ -117,6 +117,14 @@ with ThreadPoolExecutor(max_workers=2) as executor:
 	#executor.submit(video_stream)
 
 '''
+def corrigir_padding(string_base64):
+    # Calcule a quantidade de padding necessária
+    padding_needed = 4 - (len(string_base64) % 4)
+    if padding_needed < 4:
+        string_base64 += '=' * padding_needed
+
+    return string_base64
+
 def main():
 	host_ip = "127.0.0.1"   
 	porta = 12345
@@ -143,8 +151,12 @@ def main():
 	cv2.namedWindow('RECEIVING VIDEO')        
 	cv2.moveWindow('RECEIVING VIDEO', 10,360) 
 	fps,st,frames_to_count,cnt = (0,0,20,0)
+	print("Reciving video...")
 	while True:
 		packet,_ = client_socket.recvfrom(BUFF_SIZE)
+		#print("REcebi pacote do servidor: ", client_address)
+		#data_corrigida = corrigir_padding(pa)
+
 		data = base64.b64decode(packet,' /')
 		npdata = np.frombuffer(data, dtype=np.uint8)
 	

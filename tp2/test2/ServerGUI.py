@@ -48,9 +48,12 @@ class ServerGUI:
             i+=1
 
     def selectStream(self):
+        # Criar a tela de reprodução
+        self.tela = Label(self.janela, width=30, height=20)
+        self.tela.grid(row=0, column=0, columnspan=4, sticky="wens", padx=5, pady=5)
         # Butao de menu para futuras alterações 
         self.botaoSetup = Button(self.janela, width=20, padx=3, pady=3)
-        self.botaoSetup["text"] = "Setup Menu"
+        self.botaoSetup["text"] = "conectar ao RP"
         self.botaoSetup["command"] = self.setupMovie
         self.botaoSetup.grid(row=0, column=0, padx=2, pady=2)
         
@@ -114,16 +117,20 @@ class ServerGUI:
     def pauseMovie(self):
         print("Pause")
         if not self.Pause:
-            self.botaoPause["Text"] = "Resume"
+            self.botaoPause["text"] = "Resume"
             self.Pause = True
         else:
-            self.botaoPause["Text"] = "Pause"
+            self.botaoPause["text"] = "Pause"
             self.Pause = False
 
     def exitClient():
         print("exit")   
 
     def playMovie(self):
+        thread = threading.Thread(target=self.play)
+        thread.start()
+
+    def play(self):
         print("Streaming")
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=3) as executor:
@@ -151,7 +158,7 @@ class ServerGUI:
         WIDTH = 400
         i=0
         while True:
-            #while True:
+            while not self.Pause:
                 frame = self.queue.get()
                 encoded,buffer = cv2.imencode('.jpeg',frame,[cv2.IMWRITE_JPEG_QUALITY,80])
                 message = base64.b64encode(buffer)                
@@ -176,14 +183,14 @@ class ServerGUI:
                 
                 # Display the frame in a custom GUI window
                 '''
-                    try:
+                try:
                         frame_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         frame_image = Image.fromarray(frame_image)
                         frame_image = ImageTk.PhotoImage(image=frame_image)
 
                         self.tela.config(image=frame_image, width=60, height=40)
                         self.tela.image = frame_image
-                    except:
+                except:
                         pass
                 '''
                 key = cv2.waitKey(int(1000*self.TS)) & 0xFF	
