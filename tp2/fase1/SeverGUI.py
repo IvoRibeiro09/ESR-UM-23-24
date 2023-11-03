@@ -1,35 +1,43 @@
-import socket, os
+import socket
+from auxiliarFunc import *
 
 class ServerGUI:
 
-    def __init__(self,ip , ip_rp, porta_rp):
-        self.ip = ip 
-        self.ipDoRP = ip_rp
-        self.portaDoRP = porta_rp
+    def __init__(self, file):
+        #self.IP = getIP
+        self.IP = '127.0.0.2'
+        self.ipDoRP = None
+        self.portaDoRP = None
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = (self.ipDoRP, self.portaDoRP)
         self.videoList = []
+        self.parse(file)
         self.serverStarter()
 
-    def parse(self):
-        print("Parsing server...")
-        # ao fazer parse do ficheiro guardar o nome e o caminho para o ficheiro
-        # (Nome , caminho)
-        video1 = "../VIDEO/video.mp4"
-        video2 = "../VIDEO/videoA.mp4"
-        
-        self.videoList.append((getVideoName(video1), video1))
-        self.videoList.append((getVideoName(video2), video2))
-        print(self.videoList)
+    def parse(self, file):
+        print("Parsing...")
+        with open(file, 'r') as f:
+            read = False
+            for line in f:
+                if f"ip- {self.IP}" in line:
+                    read = True
+                if read:
+                    if "------" in line:
+                        break
+                    elif "ip_rp- " in line:
+                        self.ipDoRP = extrair_conteudo(line)
+                    elif "porta_rp- " in line:
+                        self.portaDoRP = extrair_numero_porta(line)
+                    elif "stream- " in line:
+                        self.videoList.append(extrair_conteudo(line))
 
     def serverStarter(self):
         print("Starter...")
-        self.parse()
         self.conectToRP()
     
     def conectToRP(self):
         try:
-            self.server_socket.connect(self.server_address)
+            server_address = (self.ipDoRP, self.portaDoRP)
+            self.server_socket.connect(server_address)
             print("Servidor conectado ao RP")
 
             # enviar os videos que você tem para exibir
@@ -46,20 +54,11 @@ class ServerGUI:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
 
 
-def getVideoName(video):
-    # nome do ficheiro sem o caminho
-    nomeExtensao = os.path.basename(video)
-    video_sem_extensao, extensao = os.path.splitext(nomeExtensao)
-    return video_sem_extensao
-    
-
 if __name__ == "__main__":
     try:
-        ip = '127.0.0.2'
-        porta_rp = 12346
-        ip_rp = '127.0.0.1' 
+        filename = "config_file.txt"
 
         # Criar um Servidor
-        rp = ServerGUI(ip, ip_rp, porta_rp)
+        rp = ServerGUI(filename)
     except:
         print("[Usage: Server.py]\n")	

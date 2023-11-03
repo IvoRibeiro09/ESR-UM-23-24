@@ -1,31 +1,37 @@
 import tkinter as tk
 import socket
-
+from auxiliarFunc import *
 class ClienteGUI:
 
-    def __init__(self, ip, node):
+    def __init__(self, file):
         #self.janela = janela
-        self.IP = ip
-        self.porta= 12345
-        self.adjacentes = node
+        #self.IP = getIP
+        self.IP = '127.0.0.3'
+        self.adjacentes = []
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket_address = (node, self.porta)
         self.StreamPause = False
         self.videosNoRP = None
-        #self.parse()
+        self.parse(file)
         self.clientStart()
 
+    
     def parse(self, file):
+        print("Parsing...")
         with open(file, 'r') as f:
+            read = False
             for line in f:
-                if self.IP in line:
-                    while "#####" not in line:
-                        print("parse estas proximas linhas")
-
-
+                if f"ip- {self.IP}" in line:
+                    read = True
+                if read:
+                    if "------" in line:
+                        break
+                    elif "neighbour- " in line:
+                        self.adjacentes.append(extrair_neighbour(line))
+        
     def clientStart(self):
         #conectar ao servidor 
-        self.server_socket.connect(self.socket_address)
+        socket_address = self.adjacentes[0]
+        self.server_socket.connect(socket_address)
         print("Conectado ao RP")
         #pedir os videos que ele tem 
         print("Pedido de quais videos exixtem no RP enviado")
@@ -38,7 +44,40 @@ class ClienteGUI:
 
         print("Pedido de quais videos exixtem no RP recebido")
         print(self.videosNoRP)
+    '''import socket
 
+def comunicar_com_client(client_instance, server_address):
+    # Criar um socket de cliente
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    try:
+        # Conectar ao servidor
+        client_socket.connect(server_address)
+        print("Conectado ao servidor RP")
+
+        # Enviar pedido de lista de vídeos
+        message = "VideoList"
+        client_socket.sendall(message.encode())
+        print("Pedido de lista de vídeos enviado")
+
+        # Receber a lista de vídeos do servidor
+        data = client_socket.recv(1024)
+        decoded_data = data.decode()
+        print('Videos presentes no servidor RP:', decoded_data)
+
+    except Exception as e:
+        print("Erro durante a comunicação com o servidor:", str(e))
+    finally:
+        # Fechar o socket do cliente
+        client_socket.close()
+
+# Suponha que você tenha um objeto 'cliente' e o endereço do servidor (host, porta) apropriado.
+# Substitua 'server_address' pelo endereço real do servidor que você deseja se conectar.
+server_address = ('localhost', 12345)  # Exemplo: ('localhost', 12345)
+
+# Chame a função para comunicar com o cliente
+comunicar_com_client(client_instance=cliente, server_address=server_address)
+'''
 
     def clienteInterface2(self): 
         # Butao streamar e enviar a stream de video para o cliente		
@@ -68,13 +107,11 @@ class ClienteGUI:
 
 if __name__ == "__main__":
     try:
-        ip = '127.0.0.3'
-        portaClient = 12345
-        ip_rp = '127.0.0.1'
+        filename = "config_file.txt"
 
         # Criar um cliente
         #janela = tk()
-        cliente = ClienteGUI(ip, ip_rp)
+        cliente = ClienteGUI(filename)
         # cliente.parse(file)
         #cliente.clientStart()
         #cliente.janela.title("Servidor")
