@@ -28,7 +28,9 @@ class ServerGUI:
                     elif "porta_rp- " in line:
                         self.portaDoRP = extrair_numero_porta(line)
                     elif "stream- " in line:
-                        self.videoList.append(extrair_conteudo(line))
+                        file = extrair_conteudo(line)
+                        filename = getVideoName(file)
+                        self.videoList.append((filename, file))
 
     def serverStarter(self):
         print("Starter...")
@@ -39,15 +41,11 @@ class ServerGUI:
             server_address = (self.ipDoRP, self.portaDoRP)
             self.server_socket.connect(server_address)
             print("Servidor conectado ao RP")
-
+    
             # enviar os videos que você tem para exibir
             for video in self.videoList:
-                msg = f"ADD-{video[0]}".encode('utf-8')
+                msg = f"{video[0]}-ADD-".encode('utf-8')
                 self.server_socket.sendall(msg)
-
-            # enviar mensagem de que já enviou tudo
-            end_msg = "-END".encode('utf-8')
-            self.server_socket.sendall(end_msg)
 
             print("RP informado dos vídeos que o servidor tem disponíveis...")
         except Exception as e:

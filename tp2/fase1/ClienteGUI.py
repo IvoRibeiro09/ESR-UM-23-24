@@ -29,55 +29,34 @@ class ClienteGUI:
                         self.adjacentes.append(extrair_neighbour(line))
         
     def clientStart(self):
+        print("Starter...")
+        self.inicialConnection()
+        self.streamTransmition()
+
+    def inicialConnection(self):
+        print("Pedido de quais videos estao no RP...")
         #conectar ao servidor 
         socket_address = self.adjacentes[0]
         self.server_socket.connect(socket_address)
-        print("Conectado ao RP")
         #pedir os videos que ele tem 
-        print("Pedido de quais videos exixtem no RP enviado")
-        message = "VideoList"
-        self.server_socket.sendall((message).encode())
-        #receber a lista de video do rp
-        data = self.server_socket.recv(1024)
-        decodedData = str(data)[2:-1]
-        print('Videos presentes no RP:',decodedData)
+        try:
+            message = "VideoList"
+            self.server_socket.sendall((message).encode())
+            #receber a lista de video do rp
+            data = self.server_socket.recv(1024)
+            mensagem = data.decode()
+            print('Videos presentes no RP: ',mensagem)
+            print("Pedido de quais videos exixtem no RP recebido")
+            print(self.videosNoRP)
+        except Exception as e:
+            print(f"Erro ao conectar ou enviar mensagens: {e}")
 
-        print("Pedido de quais videos exixtem no RP recebido")
-        print(self.videosNoRP)
-    '''import socket
 
-def comunicar_com_client(client_instance, server_address):
-    # Criar um socket de cliente
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    try:
-        # Conectar ao servidor
-        client_socket.connect(server_address)
-        print("Conectado ao servidor RP")
+    def streamTransmition(self):
+        print("Transmitting...")
 
-        # Enviar pedido de lista de vídeos
-        message = "VideoList"
-        client_socket.sendall(message.encode())
-        print("Pedido de lista de vídeos enviado")
+        self.server_socket.close()
 
-        # Receber a lista de vídeos do servidor
-        data = client_socket.recv(1024)
-        decoded_data = data.decode()
-        print('Videos presentes no servidor RP:', decoded_data)
-
-    except Exception as e:
-        print("Erro durante a comunicação com o servidor:", str(e))
-    finally:
-        # Fechar o socket do cliente
-        client_socket.close()
-
-# Suponha que você tenha um objeto 'cliente' e o endereço do servidor (host, porta) apropriado.
-# Substitua 'server_address' pelo endereço real do servidor que você deseja se conectar.
-server_address = ('localhost', 12345)  # Exemplo: ('localhost', 12345)
-
-# Chame a função para comunicar com o cliente
-comunicar_com_client(client_instance=cliente, server_address=server_address)
-'''
 
     def clienteInterface2(self): 
         # Butao streamar e enviar a stream de video para o cliente		
