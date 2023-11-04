@@ -1,16 +1,19 @@
 import tkinter as tk
 import socket
 from auxiliarFunc import *
+import threading
+
 class ClienteGUI:
 
     def __init__(self, file):
-        #self.janela = janela
+        self.janela = None
         #self.IP = getIP
         self.IP = '127.0.0.3'
         self.adjacentes = []
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.StreamPause = False
-        self.videosNoRP = None
+        self.streansNoRP = None
+        self.condition = threading.Condition()
+        self.streamSelected = None
         self.parse(file)
         self.clientStart()
 
@@ -31,10 +34,10 @@ class ClienteGUI:
     def clientStart(self):
         print("Starter...")
         self.inicialConnection()
-        self.streamTransmition()
+        t1 = threading.Thread(target=self.streamTransmition())
+        t1.start()
 
     def inicialConnection(self):
-        print("Pedido de quais videos estao no RP...")
         #conectar ao servidor 
         socket_address = self.adjacentes[0]
         self.server_socket.connect(socket_address)
@@ -45,43 +48,90 @@ class ClienteGUI:
             #receber a lista de video do rp
             data = self.server_socket.recv(1024)
             mensagem = data.decode()
-            print('Videos presentes no RP: ',mensagem)
+            vids = mensagem.split("/")
+            vids.pop()
+            self.streansNoRP = vids
             print("Pedido de quais videos exixtem no RP recebido")
-            print(self.videosNoRP)
         except Exception as e:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
 
 
     def streamTransmition(self):
-        print("Transmitting...")
-
+        self.clienteInterface()
+        with self.condition:
+            while self.streamSelected is None:
+                self.condition.wait()
+        print(f"Transmitting {self.streamSelected}...")
         self.server_socket.close()
 
+    def clienteInterface(self):
+        self.janela = tk.Tk()
+        self.janela.title("Servidor")
+        print("Show interface1...")
+        i = 0
+        spacing = 10
+        for stream in self.streansNoRP:
+            #tela com nome
+            self.label = tk.Label(self.janela, width=60, padx=spacing, pady=spacing)
+            self.label["text"] = f"{stream}"
+            self.label.grid(row=i, column=0, padx=spacing, pady=spacing)
+
+            # Butao streamar e enviar a stream de video para o cliente		
+            self.botaoStart = tk.Button(self.janela, width=30, padx=spacing, pady=spacing)
+            self.botaoStart["text"] = "Select"
+            self.botaoStart["command"] = lambda s=stream: self.selectStream(s)
+            self.botaoStart.grid(row=i, column=1, padx=spacing, pady=spacing)
+            i+=1
+        self.janela.mainloop()
+
+    def selectStream(self, video):
+        print(f"{video} has been selected...")
+        with self.condition:
+            self.streamSelected = video
+            self.condition.notify()
+        self.janela.destroy()
+    
+    def waitselction(self):
+        with self.condition:
+            print("waiting")
+            self.condition.wait()
 
     def clienteInterface2(self): 
-        # Butao streamar e enviar a stream de video para o cliente		
-        self.botaoStart = tk.Button(self.janela, width=20, padx=3, pady=3)
-        self.botaoStart["text"] = "Play"
-        self.botaoStart["command"] = self.playStream
-        self.botaoStart.grid(row=0, column=1, padx=2, pady=2)
-        
-        # Butao pausa de enviar a stream de video para o cliente				
-        self.botaoPause = tk.Button(self.janela, width=20, padx=3, pady=3)
-        self.botaoPause["text"] = "Pause"
-        self.botaoPause["command"] = self.pauseStream
-        self.botaoPause.grid(row=0, column=2, padx=2, pady=2)
-            
-        # Para de streamar o video
-        self.botaoClose = tk.Button(self.janela, width=20, padx=3, pady=3)
-        self.botaoClose["text"] = "Close"
-        self.botaoClose["command"] =  self.exitClient
-        self.botaoClose.grid(row=0, column=3, padx=2, pady=2)
+        print("Show interface...")
+        i = 0
+        for strean in self.streansNoRP:
+            #tela com nome
+            self.label = tk.Label(self.janela, width=20, padx=3, pady=3)
+            self.label["text"] = f"{strean}"
+            self.label.grid(row=i, column=0, padx=2, pady=2)
+            # Butao streamar e enviar a stream de video para o cliente		
+            self.botaoStart = tk.Button(self.janela, width=20, padx=3, pady=3)
+            self.botaoStart["text"] = "Play"
+            self.botaoStart["command"] = self.playStream
+            self.botaoStart.grid(row=i, column=1, padx=2, pady=2)
+            # Butao pausa de enviar a stream de video para o cliente				
+            self.botaoPause = tk.Button(self.janela, width=20, padx=3, pady=3)
+            self.botaoPause["text"] = "Pause"
+            self.botaoPause["command"] = self.pauseStream
+            self.botaoPause.grid(row=i, column=2, padx=2, pady=2)    
+            # Para de streamar o video
+            self.botaoClose = tk.Button(self.janela, width=20, padx=3, pady=3)
+            self.botaoClose["text"] = "Close"
+            self.botaoClose["command"] =  self.closeStream
+            self.botaoClose.grid(row=i, column=3, padx=2, pady=2)
+            i+=1
 
     def playStream(self, video):
         #pedir stream ao RP
         print("Pedido de envio do video "+video+ " ao servidor "+ self.socket_address)
         #receber os dados
         print("A receber video")
+    
+    def pauseStream(self):
+        print("Stream Paused...")
+
+    def closeStream(self):
+        print("Stream close")
 
 
 if __name__ == "__main__":
@@ -89,10 +139,9 @@ if __name__ == "__main__":
         filename = "config_file.txt"
 
         # Criar um cliente
-        #janela = tk()
+        #janela = tk.Tk()
+        #janela.geometry("800x600")  # Set the window size to 800x600 pixels
         cliente = ClienteGUI(filename)
-        # cliente.parse(file)
-        #cliente.clientStart()
         #cliente.janela.title("Servidor")
         #janela.mainloop()
     except Exception as e:

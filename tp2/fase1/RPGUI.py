@@ -78,8 +78,10 @@ class RPGUI:
                     noVidmsg = "I DONT HAVE STREAMS"
                     conn.sendall(noVidmsg.encode())
                 else:
+                    msg = ""
                     for video in self.streamList:
-                        conn.sendall(video[0].encode())
+                        msg = msg+f"{video[0]}/"    
+                    conn.sendall(msg.encode())
                 print("Lista de vídeos enviada ao cliente")
             else:
                 print("Mensagem não reconhecida:", mensagem)
