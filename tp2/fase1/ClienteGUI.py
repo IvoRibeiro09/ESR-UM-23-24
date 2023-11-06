@@ -64,7 +64,7 @@ class ClienteGUI:
 
     def clienteInterface(self):
         self.janela = tk.Tk()
-        self.janela.title("Servidor")
+        self.janela.title(f"Cliente {self.IP}")
         print("Show interface1...")
         i = 0
         spacing = 10
