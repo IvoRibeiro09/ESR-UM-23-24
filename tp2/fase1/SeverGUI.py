@@ -1,5 +1,8 @@
 import socket
+from time import sleep
 from auxiliarFunc import *
+import threading
+import queue
 
 class ServerGUI:
 
@@ -10,6 +13,7 @@ class ServerGUI:
         self.portaDoRP = None
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.videoList = []
+        self.streamQueue = queue.Queue()
         self.parse(file)
         self.serverStarter()
 
@@ -35,6 +39,8 @@ class ServerGUI:
     def serverStarter(self):
         print("Starter...")
         self.conectToRP()
+        self.streamStarter()
+        self.server_socket.close()
     
     def conectToRP(self):
         try:
@@ -50,6 +56,27 @@ class ServerGUI:
             print("RP informado dos vídeos que o servidor tem disponíveis...")
         except Exception as e:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
+
+    def streamStarter(self):
+        print("Server à espera de pedidos de Stream do RP")
+        while True:
+            data = self.server_socket.recv(1024)
+            if not data:
+                break
+            mensagem = data.decode('utf-8')
+            if "Stream- " in mensagem:
+                self.streamQueue.put(extrair_conteudo(mensagem))
+                thread = threading.Thread(target=self.sendStream)
+                thread.start()
+
+    def sendStream(self):
+        streamName = self.streamQueue.get()
+        print(f"Vou streamar o video: {streamName}")
+        sleep(15)
+
+'''
+
+'''
 
 
 if __name__ == "__main__":

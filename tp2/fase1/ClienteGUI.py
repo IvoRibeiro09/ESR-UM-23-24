@@ -34,8 +34,9 @@ class ClienteGUI:
     def clientStart(self):
         print("Starter...")
         self.inicialConnection()
-        t1 = threading.Thread(target=self.streamTransmition())
-        t1.start()
+        self.askStreamTransmission()
+        self.streamTransmission()
+        self.server_socket.close()
 
     def inicialConnection(self):
         #conectar ao servidor 
@@ -55,14 +56,11 @@ class ClienteGUI:
         except Exception as e:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
 
-
-    def streamTransmition(self):
+    def askStreamTransmission(self):
         self.clienteInterface()
         with self.condition:
             while self.streamSelected is None:
                 self.condition.wait()
-        print(f"Transmitting {self.streamSelected}...")
-        self.server_socket.close()
 
     def clienteInterface(self):
         self.janela = tk.Tk()
@@ -76,7 +74,7 @@ class ClienteGUI:
             self.label["text"] = f"{stream}"
             self.label.grid(row=i, column=0, padx=spacing, pady=spacing)
 
-            # Butao streamar e enviar a stream de video para o cliente		
+            # Botao streamar e enviar a stream de video para o cliente		
             self.botaoStart = tk.Button(self.janela, width=30, padx=spacing, pady=spacing)
             self.botaoStart["text"] = "Select"
             self.botaoStart["command"] = lambda s=stream: self.selectStream(s)
@@ -86,6 +84,8 @@ class ClienteGUI:
 
     def selectStream(self, video):
         print(f"{video} has been selected...")
+        mensagem = f"Stream- {video}"
+        self.server_socket.sendall((mensagem).encode())
         with self.condition:
             self.streamSelected = video
             self.condition.notify()
@@ -95,7 +95,18 @@ class ClienteGUI:
         with self.condition:
             print("waiting")
             self.condition.wait()
+    
+    def streamTransmission(self):
+        print("Cliente aguarda video...")
+        # recebe o video em bytes do cliente
+        while True:
+            data = self.server_socket.recv(4096).decode('utf-8')
 
+           
+
+
+
+    '''
     def clienteInterface2(self): 
         print("Show interface...")
         i = 0
@@ -132,7 +143,7 @@ class ClienteGUI:
 
     def closeStream(self):
         print("Stream close")
-
+    '''
 
 if __name__ == "__main__":
     try:

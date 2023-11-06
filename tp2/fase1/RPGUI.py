@@ -1,5 +1,6 @@
 import socket
 import threading
+from time import sleep
 import tkinter as tk
 from auxiliarFunc import *
 import queue
@@ -42,6 +43,7 @@ class RPGUI:
         thread0.start()
         thread1.start()
 
+    # Tratamento de Clientes
     def clientConnection(self):
         socket_address = (self.IP, self.PORTACLIENT)
         self.socketForClient.bind(socket_address)
@@ -57,7 +59,7 @@ class RPGUI:
             self.socketForClient.close()
 
     def processClient(self, conn, addr):
-        print(f"Processing {addr}")
+        print(f"Processing Client: {addr}")
         try:
             self.initialClientConn(conn, addr)
             self.streamTransmition(conn, addr)
@@ -80,9 +82,9 @@ class RPGUI:
                 else:
                     msg = ""
                     for video in self.streamList:
-                        msg = msg+f"{video[0]}/"    
+                        msg = msg+f"{video}/"    
                     conn.sendall(msg.encode())
-                print("Lista de vídeos enviada ao cliente")
+                print("Lista de vídeos enviada ao cliente: ",addr)
             else:
                 print("Mensagem não reconhecida:", mensagem)
         except Exception as e:
@@ -92,10 +94,15 @@ class RPGUI:
         #esperar receber uma mensagem do cliente com qual video da lista quer assistir
         data = conn.recv(1024)
         mensagem = data.decode()
-        print(f"Cliente {addr} pediu a visualização de {mensagem}")
+        vid = extrair_conteudo(mensagem)
+        print(f"Cliente {addr} pediu a visualização da stream: {vid}")
         # adicionar à lista queue o video pedido
         # notifiacar os servidores
+        with self.condition:
+            self.clientQueue.put(vid)
+            self.condition.notifyAll()
 
+    # Tratamento de Servidores
     def serverConnection(self):
         socket_address = (self.IP, self.PORTASERVER)
         self.socketForServer.bind(socket_address)
@@ -111,26 +118,51 @@ class RPGUI:
             self.socketForServer.close()
 
     def processServer(self, conn, addr):
-        print(f"Processing {addr}")
+        print(f"Processing Server: {addr}")
+        try:
+            self.initialServerConnection(conn, addr)
+            self.recibeServerStream(conn, addr)
+        finally:
+            conn.close()
+    
+    def initialServerConnection(self, conn, addr):
         # perguntar quais os videos que o servidor tem para transmitir
         # receber mensagens com o nome dos videos
         data = conn.recv(1024)
         mensagem = data.decode('utf-8')
         # Processar e responder às mensagens recebidas aqui
-        self.updateVideoList(mensagem, addr)
+        self.updateVideoList(mensagem)
         #aguardar que o seja solicitado um video para pedir ao server
         with self.condition:
             check = False
             while not check:
                 self.condition.wait()
-                # check = ckeckIfSever(mensagem, queue, addr)
-        conn.close()
+                check = self.checkIfServer(mensagem)
+        # é o servidor com o video que o cliente pediu
+        stream = self.clientQueue.get()
+        # enviar pedido ao servidor para enviar o video
+        msgToSend = f'Stream- {stream}'
+        conn.sendall(msgToSend.encode())
+        print(f"Enviou requisição para Stream: {stream} - {addr}")
 
-    def updateVideoList(self, mensagem , addr):
+
+    def updateVideoList(self, mensagem):
         vids = mensagem.split('-ADD-')
         vids.pop()
         for video in vids:
-            self.streamList.append((video, addr))
+            self.streamList.append(video)
+
+    def checkIfServer(self, mensagem):
+        try:
+            selectedStream = self.clientQueue.get(timeout=1)  # Aqui você obtém o elemento da fila, com um tempo limite de 1 segundo
+            self.clientQueue.put(selectedStream)  # Devolve o elemento à fila (se desejar)
+            return selectedStream in mensagem
+        except queue.Empty:
+            return False
+
+    def recibeServerStream(self, conn, addr):
+        print("A receber stream de: ", addr)
+        sleep(15)
         
 
 if __name__ == "__main__":
