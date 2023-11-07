@@ -6,7 +6,13 @@ import threading, wave, pyaudio,pickle,struct
 import sys
 import queue
 import os
-         
+from PIL import Image, ImageTk    
+import tkinter as tk     
+        
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
+FPS_TARGET = 24
+
 class Server():
     def __init__(self):
         self.IP = "127.0.0.1"
@@ -15,6 +21,14 @@ class Server():
         self.filename = '../VIDEO/video.mp4'
         self.audiofile = None
         self.getaudiofile()
+        # Inicializa a janela Tkinter
+        self.janela = tk.Tk()
+        self.janela.title("Video Stream Client")
+
+        # Inicializa uma label para exibir os frames recebidos
+        self.label = tk.Label(self.janela)
+        self.label.pack()
+
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.BUFF_SIZE)
         self.socket_address = (self.IP, self.porta)
@@ -47,45 +61,53 @@ class Server():
         t2 = threading.Thread(target=self.audio_stream)
         t1.start()
         t2.start()
-     
+        self.janela.mainloop()
+
     def video_stream2(self):
-        WIDTH = 400
-        fps, st, frames_to_count, cnt = (0, 0, 1, 0)
-
-        cv2.namedWindow('TRANSMITTING VIDEO')
-        cv2.moveWindow('TRANSMITTING VIDEO', 10, 30)
-
+        #fps, st, frames_to_count, cnt = (0, 0, 1, 0)
+        img = None  # Inicialize a variável de imagem fora do loop
+        frame_rate = 24  # Taxa de quadros desejada (25 FPS)
+        frame_interval = 1.0 / frame_rate
+        st = time.time()
         while self.vid.isOpened():
-                _, frame = self.vid.read()
-                frame = imutils.resize(frame, width=WIDTH)
+            ret, frame = self.vid.read()
+            if not ret:
+                break
 
-                encoded, buffer = cv2.imencode('.jpeg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                message = base64.b64encode(buffer)
-                self.client_socket.send(message)
+            frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+            frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
 
-                if cnt == frames_to_count:
-                    try:
-                        fps = frames_to_count / (time.time() - st)
-                        st = time.time()
-                        cnt = 0
-                        if fps > self.FPS:
-                            self.TS += 0.001
-                        elif fps < self.FPS:
-                            self.TS -= 0.001
-                    except:
-                        pass
+            frame_size = len(frame_data)
+            self.client_socket.send(frame_size.to_bytes(4, byteorder='big'))
+            self.client_socket.send(frame_data)
 
-                cnt += 1
-                cv2.imshow('TRANSMITTING VIDEO', frame)
-                key = cv2.waitKey(int(1000 * self.TS)) & 0xFF
-                if key == ord('q'):
-                    os._exit(1)
-                    self.TS = False
-                    break
+            
+            # Calcule o tempo decorrido desde o último envio
+            elapsed_time = time.time() - st
+
+            # Aguarde o tempo restante para manter a taxa de quadros
+            time.sleep(max(0, frame_interval - elapsed_time - 0.002))
+
+            st = time.time()
+
+            # Converte os dados do frame em uma imagem
+            img = ImageTk.PhotoImage(data=frame_data)
+
+			# Atualiza a label na janela Tkinter com a nova imagem
+            self.label.configure(image=img)
+            self.label.image = img
+            self.janela.update()
+        
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                os._exit(1)
+                self.TS = False
+                break
 
         print('Player closed')
         self.BREAK = True
         self.vid.release()
+
         '''
         import socket
 import cv2

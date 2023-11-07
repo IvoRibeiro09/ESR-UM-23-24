@@ -32,24 +32,33 @@ class Cliente():
 	def receive_video_thread(self):
 		while self.receive_video:
 			try:
-				message = self.server_socket.recv(65536)
-				if len(message) > 0:
-					frame = base64.b64decode(message)
-					frame = np.frombuffer(frame, dtype=np.uint8)
-					frame = cv2.imdecode(frame, 1)
-					self.convert_to_photo_image(frame)
-					self.label.configure(image=self.photo)
-					#self.label.update()
+				# Recebe o tamanho do frame (4 bytes) do servidor
+				frame_size_bytes = self.server_socket.recv(4)
+				frame_size = int.from_bytes(frame_size_bytes, byteorder='big')
+
+				# Recebe o frame do servidor
+				frame_data = b""
+				while len(frame_data) < frame_size:
+					frame_data += self.server_socket.recv(frame_size - len(frame_data))
+
+				# Converte os dados do frame em uma imagem
+				img = ImageTk.PhotoImage(data=frame_data)
+
+				# Atualiza a label na janela Tkinter com a nova imagem
+				self.label.configure(image=img)
+				self.label.image = img
+				self.janela.update()
 			except Exception as e:
                 # Registre a exceção para fins de depuração
 				print(f"Erro ao receber vídeo: {e}")
-
+		
+		'''
 	def convert_to_photo_image(self, frame):
 		frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 		frame = cv2.resize(frame, (640, 480))
 		photo = Image.fromarray(frame)
 		self.photo = ImageTk.PhotoImage(image=photo)
-
+	'''
 	def recibeAudio(self):
 		p = pyaudio.PyAudio()
 		CHUNK = 1024
