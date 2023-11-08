@@ -5,6 +5,75 @@ import tkinter as tk
 from auxiliarFunc import *
 import queue
 
+class Stream():
+    def __init__(self, name, event):
+        self.name = name
+        self.clientList = []
+        #self.queue = queue.Queue(maxsize=1)
+        self.status = "Closed"
+        self.event = threading.Event()
+        self.event = event
+    
+    def getName(self):
+        return self.name
+
+    def getStatus(self):
+        return self.status
+        
+    def setStatus(self, status):
+        self.status = status
+
+    def addClient(self, c):
+        if self.status == "Closed":
+            self.status = "Pending"
+            #notify server to start stream
+            self.event.set()
+        self.clientList.append(c)
+
+class Cliente:
+    def __init__(self, conn, addr):
+        self.ip = addr[0]
+        self.porta = addr[1]       
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket = conn
+
+    def initialClientConn(self, streamList):
+        try:
+            # Receber msg de quais videos tem
+            data = self.client_socket.recv(1024)
+            mensagem = data.decode()
+
+            if mensagem == "VideoList":
+                # Envie a lista de vídeos de volta ao cliente
+                if not streamList:
+                    noVidmsg = "I DONT HAVE STREAMS"
+                    self.client_socket.sendall(noVidmsg.encode())
+                else:
+                    msg = ""
+                    for stream in streamList:
+                        msg = msg+f"{stream.name}/"    
+                    self.client_socket.sendall(msg.encode())
+                print("Lista de vídeos enviada ao cliente: ",self.ip)
+            else:
+                print("Mensagem não reconhecida:", mensagem)
+                return None
+            data = self.client_socket.recv(1024)
+            mensagem = data.decode()
+            vid = extrair_conteudo(mensagem)
+            print(f"Cliente {self.ip} pediu a visualização da stream: {vid}")
+            return vid
+        except Exception as e:
+            print("Erro durante a comunicação com o cliente:", str(e))
+            return None
+    
+    def sendStream(self, frame_size_bytes, frame_data):
+        try:
+            self.client_socket.send(frame_size_bytes)
+            self.client_socket.send(frame_data)
+        except Exception as e:
+                print(e)
+
+
 class RPGUI:
 
     def __init__(self, file):
@@ -14,10 +83,12 @@ class RPGUI:
         self.PORTASERVER = None
         self.socketForServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socketForClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         self.streamList = []
-        self.condition = threading.Condition()
-        self.clientQueue = queue.Queue(maxsize=10)
-        self.streamsPlayingList = []
+
+        #self.condition = threading.Condition()
+        #self.clientQueue = queue.Queue(maxsize=10)
+        
         self.parse(file)
         self.startRP()
 
@@ -61,47 +132,18 @@ class RPGUI:
     def processClient(self, conn, addr):
         print(f"Processing Client: {addr}")
         try:
-            self.initialClientConn(conn, addr)
-            self.streamTransmition(conn, addr)
-
-        finally:
-            # Feche o socket do cliente
-            conn.close()
-        
-    def initialClientConn(self, conn, addr):
-        try:
-            # Receber msg de quais videos tem
-            data = conn.recv(1024)
-            mensagem = data.decode()
-
-            if mensagem == "VideoList":
-                # Envie a lista de vídeos de volta ao cliente
-                if not self.streamList:
-                    noVidmsg = "I DONT HAVE STREAMS"
-                    conn.sendall(noVidmsg.encode())
-                else:
-                    msg = ""
-                    for video in self.streamList:
-                        msg = msg+f"{video}/"    
-                    conn.sendall(msg.encode())
-                print("Lista de vídeos enviada ao cliente: ",addr)
-            else:
-                print("Mensagem não reconhecida:", mensagem)
+            cliente = Cliente(conn, addr)
+            askedStream = cliente.initialClientConn(self.streamList)
+            if askedStream:
+                for stream in self.streamList:
+                    if askedStream == stream.name:
+                        stream.addClient(cliente)
+                        break
         except Exception as e:
-            print("Erro durante a comunicação com o cliente:", str(e))
+            print("Erro no processamento do cliente: ", addr[0])
+            print(e)
 
-    def streamTransmition(self, conn, addr):
-        #esperar receber uma mensagem do cliente com qual video da lista quer assistir
-        data = conn.recv(1024)
-        mensagem = data.decode()
-        vid = extrair_conteudo(mensagem)
-        print(f"Cliente {addr} pediu a visualização da stream: {vid}")
-        # adicionar à lista queue o video pedido
-        # notifiacar os servidores
-        with self.condition:
-            self.clientQueue.put(vid)
-            self.condition.notifyAll()
-
+    
     # Tratamento de Servidores
     def serverConnection(self):
         socket_address = (self.IP, self.PORTASERVER)
@@ -130,40 +172,60 @@ class RPGUI:
         # receber mensagens com o nome dos videos
         data = conn.recv(1024)
         mensagem = data.decode('utf-8')
+        evento = threading.Event()
         # Processar e responder às mensagens recebidas aqui
-        self.updateVideoList(mensagem)
+        self.updateVideoList(mensagem, evento)
+
         #aguardar que o seja solicitado um video para pedir ao server
-        with self.condition:
-            check = False
-            while not check:
-                self.condition.wait()
-                check = self.checkIfServer(mensagem)
-        # é o servidor com o video que o cliente pediu
-        stream = self.clientQueue.get()
-        # enviar pedido ao servidor para enviar o video
-        msgToSend = f'Stream- {stream}'
-        conn.sendall(msgToSend.encode())
-        print(f"Enviou requisição para Stream: {stream} - {addr}")
 
+        waiting = True
+        while waiting:
+            evento.wait()
+            askedStream = self.checkWhatStream()
+            if askedStream != None:
+                # enviar mensagem pro server dizer qual vai ser o video escolhido
+                msgToSend = "Stream- " + askedStream.name
+                conn.sendall(msgToSend.encode('utf-8'))
+                print(f"Enviou requisição de {askedStream.name} para Stream: {addr}")
+                thread = threading.Thread(target=self.recieveStream, args=(conn, askedStream))
+                thread.start()
+            evento.clear()
 
-    def updateVideoList(self, mensagem):
+    def updateVideoList(self, mensagem, evento):
         vids = mensagem.split('-ADD-')
         vids.pop()
         for video in vids:
-            self.streamList.append(video)
+            stream = Stream(video, evento)
+            self.streamList.append(stream)
+    
+    def checkWhatStream(self):
+        for stream in self.streamList:
+            if stream.getStatus() ==  "Pending":
+                return stream
+        return None
+    
+    def recieveStream(self, conn, sStream):
+        i = 0
+        while True:
+            print("Frame: ", i)
+            #parse packet
+            # Recebe o tamanho do frame (4 bytes) do servidor
+            frame_size_bytes = conn.recv(4)
+            frame_size = int.from_bytes(frame_size_bytes, byteorder='big')
 
-    def checkIfServer(self, mensagem):
-        try:
-            selectedStream = self.clientQueue.get(timeout=1)  # Aqui você obtém o elemento da fila, com um tempo limite de 1 segundo
-            self.clientQueue.put(selectedStream)  # Devolve o elemento à fila (se desejar)
-            return selectedStream in mensagem
-        except queue.Empty:
-            return False
+            # Recebe o frame do servidor
+            frame_data = b""
+            while len(frame_data) < frame_size:
+                frame_data += conn.recv(frame_size - len(frame_data))
 
-    def recibeServerStream(self, conn, addr):
-        print("A receber stream de: ", addr)
-        sleep(15)
-        
+            #send to clients
+            for cli in sStream.clientList:
+                try:
+                    cli.sendStream(frame_size_bytes, frame_data)
+                except Exception as e:
+                    print(e)
+            i+=1
+    
 
 if __name__ == "__main__":
     try:

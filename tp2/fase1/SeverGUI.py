@@ -1,8 +1,14 @@
-import socket
-from time import sleep
+import socket 
 from auxiliarFunc import *
 import threading
 import queue
+import time
+import cv2
+import tkinter as tk
+from PIL import Image,ImageTk
+
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
 
 class ServerGUI:
 
@@ -11,6 +17,14 @@ class ServerGUI:
         self.IP = '127.0.0.2'
         self.ipDoRP = None
         self.portaDoRP = None
+         # Inicializa a janela Tkinter
+        self.janela = tk.Tk()
+        self.janela.title("Video Stream Client")
+
+        # Inicializa uma label para exibir os frames recebidos
+        self.label = tk.Label(self.janela)
+        self.label.pack()
+
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.videoList = []
         self.streamQueue = queue.Queue()
@@ -68,15 +82,55 @@ class ServerGUI:
                 self.streamQueue.put(extrair_conteudo(mensagem))
                 thread = threading.Thread(target=self.sendStream)
                 thread.start()
+                self.janela.mainloop()
+
 
     def sendStream(self):
         streamName = self.streamQueue.get()
         print(f"Vou streamar o video: {streamName}")
-        sleep(15)
+        streampath = None
+        for video in self.videoList:
+            if video[0]== streamName:
+                streampath = video[1]
+        if streampath:
+            sstream = cv2.VideoCapture(streampath)
+            fps =  sstream.get(cv2.CAP_PROP_FPS)
+            frame_interval = 1.0 / fps
+            st = time.time()
+            i = 0
+            try:
+                while sstream.isOpened():
+                    print("Frame: ",i)
+                    ret, frame = sstream.read()
+                    if not ret:
+                        break
 
-'''
+                    frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+                    frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
 
-'''
+                    frame_size = len(frame_data)
+                    self.server_socket.send(frame_size.to_bytes(4, byteorder='big'))
+                    self.server_socket.send(frame_data)
+
+                    
+                    # Calcule o tempo decorrido desde o último envio
+                    elapsed_time = time.time() - st
+
+                    # Aguarde o tempo restante para manter a taxa de quadros
+                    time.sleep(max(0, frame_interval - elapsed_time - 0.01))
+
+                    st = time.time()
+
+                    # Converte os dados do frame em uma imagem
+                    img = ImageTk.PhotoImage(data=frame_data)
+
+                    # Atualiza a label na janela Tkinter com a nova imagem
+                    self.label.configure(image=img)
+                    self.label.image = img
+                    self.janela.update()
+                    i+=1
+            finally:
+                print('Player closed')
 
 
 if __name__ == "__main__":

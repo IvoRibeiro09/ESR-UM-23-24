@@ -2,13 +2,14 @@ import tkinter as tk
 import socket
 from auxiliarFunc import *
 import threading
+from PIL import Image, ImageTk
 
 class ClienteGUI:
 
     def __init__(self, file):
         self.janela = None
         #self.IP = getIP
-        self.IP = '127.0.0.3'
+        self.IP = '127.0.0.4'
         self.adjacentes = []
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.streansNoRP = None
@@ -35,8 +36,10 @@ class ClienteGUI:
         print("Starter...")
         self.inicialConnection()
         self.askStreamTransmission()
-        self.streamTransmission()
-        self.server_socket.close()
+        thread = threading.Thread(target=self.streamTransmission())
+        thread.start()
+        self.janela.mainloop()
+        #self.server_socket.close()
 
     def inicialConnection(self):
         #conectar ao servidor 
@@ -98,11 +101,51 @@ class ClienteGUI:
     
     def streamTransmission(self):
         print("Cliente aguarda video...")
-        # recebe o video em bytes do cliente
-        while True:
-            data = self.server_socket.recv(4096).decode('utf-8')
+        self.janela = tk.Tk()
+        self.janela.title(f"Cliente {self.IP}")
+        
+        # Substitui o Canvas por um Label
+        self.label = tk.Label(self.janela, width=640, height=480, bg='white')
+        self.label.pack()
 
-           
+        self.botaoClose = tk.Button(self.janela, width=20, padx=3, pady=3)
+        self.botaoClose["text"] = "Close"
+        self.botaoClose.pack(padx=2, pady=2)
+        # recebe o video em bytes do cliente
+        i = 0
+        while True:
+            print("Frame: ",i)
+            try:
+                # Recebe o tamanho do frame (4 bytes) do servidor
+                frame_size_bytes = self.server_socket.recv(4)
+                frame_size = int.from_bytes(frame_size_bytes, byteorder='big')
+
+				# Recebe o frame do servidor
+                frame_data = b""
+                while len(frame_data) < frame_size:
+                    frame_data += self.server_socket.recv(frame_size - len(frame_data))
+
+				# Converte os dados do frame em uma imagem
+                img = ImageTk.PhotoImage(data=frame_data)
+
+				# Atualiza a label na janela Tkinter com a nova imagem
+                self.label.configure(image=img)
+                self.label.image = img
+                self.janela.update()
+            except Exception as e:
+                # Registre a exceção para fins de depuração
+                print(f"Erro ao receber vídeo: {e}")
+            i+=1
+
+
+if __name__ == "__main__":
+    try:
+        filename = "config_file.txt"
+        cliente = ClienteGUI(filename)
+        cliente.janela.mainloop()
+    except Exception as e:
+        print(f"Erro: {e}")
+        print("[Usage: Cliente.py]\n")
 
 
 
@@ -138,23 +181,9 @@ class ClienteGUI:
         #receber os dados
         print("A receber video")
     
-    def pauseStream(self):
+    def pauseStream(self): 
         print("Stream Paused...")
 
     def closeStream(self):
         print("Stream close")
     '''
-
-if __name__ == "__main__":
-    try:
-        filename = "config_file.txt"
-
-        # Criar um cliente
-        #janela = tk.Tk()
-        #janela.geometry("800x600")  # Set the window size to 800x600 pixels
-        cliente = ClienteGUI(filename)
-        #cliente.janela.title("Servidor")
-        #janela.mainloop()
-    except Exception as e:
-        print(f"Erro: {e}")
-        print("[Usage: Cliente.py]\n")

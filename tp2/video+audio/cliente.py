@@ -52,13 +52,6 @@ class Cliente():
                 # Registre a exceção para fins de depuração
 				print(f"Erro ao receber vídeo: {e}")
 		
-		'''
-	def convert_to_photo_image(self, frame):
-		frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-		frame = cv2.resize(frame, (640, 480))
-		photo = Image.fromarray(frame)
-		self.photo = ImageTk.PhotoImage(image=photo)
-	'''
 	def recibeAudio(self):
 		p = pyaudio.PyAudio()
 		CHUNK = 1024
@@ -114,3 +107,106 @@ class Cliente():
 if __name__ == "__main__":
     cliente = Cliente()
     cliente.janela.mainloop()
+
+'''def unified_stream(self):
+    s = socket.socket()
+    new_address = (self.IP, (self.porta-1))
+    s.bind(new_address)
+
+    s.listen(5)
+    CHUNK = 1024
+    wf = wave.open(self.audiofile, 'rb')
+    p = pyaudio.PyAudio()
+    print('server listening at',new_address)
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    input=True,
+                    frames_per_buffer=CHUNK)
+    client_socket,addr = s.accept()
+    while True:
+        if client_socket:
+            while True:
+                # Video Frame
+                ret, frame = self.vid.read()
+                if not ret:
+                    break
+
+                frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+                frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
+
+                # Audio Frame
+                data = wf.readframes(CHUNK)
+                a = pickle.dumps(data)
+                audio_data = struct.pack("Q",len(a))+a
+
+                # Send both video and audio frame size
+                message = struct.pack("Q", len(frame_data)) + frame_data + struct.pack("Q", len(audio_data)) + audio_data
+                client_socket.sendall(message)
+
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('q'):
+                    os._exit(1)
+                    self.TS = False
+                    break
+
+    print('Player closed')
+    self.BREAK = True
+    self.vid.release()
+    wf.close()
+    stream.stop_stream()
+    stream.close()
+    p.terminate()'''
+
+'''import numpy as np
+import socket
+import sys
+import struct
+import pyaudio
+
+def main():
+    ip = "127.0.0.1" # Endereço IP do servidor
+    port = 55555 # Porta do servidor
+
+    # Configuração do socket UDP
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_address = (ip, port)
+
+    # Inicializa o PyAudio
+    audio = pyaudio.PyAudio()
+
+    # Inicializa o objeto Stream para reprodução de áudio
+    stream = audio.open(format=pyaudio.paInt16,
+                        channels=1,
+                        rate=44100,
+                        output=True)
+
+    try:
+        print('Esperando mensagens UDP no endereço', server_address)
+        while True:
+            # Recebe os dados UDP
+            data, server = sock.recvfrom(4096)
+
+            # Lê o tamanho do frame de áudio
+            audio_size = struct.unpack("Q", data[:8])[0]
+
+            # Lê o frame de áudio em si
+            audio_data = data[8:8+audio_size]
+
+            # Converte o frame de áudio para int16
+            audio_frame = np.frombuffer(audio_data, dtype=np.int16)
+
+            # Escreve o frame de áudio no objeto Stream
+            stream.write(audio_frame.tobytes())
+
+    except KeyboardInterrupt:
+        print('Fechando a conexão...')
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        sock.close()
+        sys.exit(0)
+
+if __name__ == '__main__':
+    main()'''

@@ -40,14 +40,14 @@ class Server():
         self.TS = (0.5/self.FPS)
         self.BREAK = False
         self.start()
-        
+
     def getaudiofile(self):
         partes = self.filename.split('.')
         partes.pop()
         nome_sem_extensao = '.'.join(partes)
-        self.audiofile = nome_sem_extensao+"temp.wav"
-        if not os.path.exists(self.audiofile):   
-            command = f"ffmpeg -i {self.filename} -ab 160k -ac 2 -ar 44100 -vn {self.audiofile}"
+        self.audiofile = nome_sem_extensao + "temp.wav"
+        if not os.path.exists(self.audiofile):
+            command = f"ffmpeg -i {self.filename} -ab 160k -ac 2 -ar 44100 -vn -f wav {self.audiofile}"
             os.system(command)
 
     def start(self):
@@ -57,11 +57,29 @@ class Server():
 
         self.client_socket, self.client_address = self.server_socket.accept()
         print("Conexão aceite da", self.client_address)
+        '''
+        start = input("S to start: ")
+        while not start == "s":
+            start = input("S to start: ")
+        self.send_stream()
+        self.janela.mainloop()
+        
+        '''
         t1 = threading.Thread(target=self.video_stream2)
         t2 = threading.Thread(target=self.audio_stream)
         t1.start()
         t2.start()
         self.janela.mainloop()
+        
+    def send_stream(self):
+        frame_rate = 25
+        frame_interval = 1.0 / frame_rate
+        st = time.time()
+
+        while self.vid.isOpened():
+            ret, frame = self.vid.read()
+            if not ret:
+                break
 
     def video_stream2(self):
         #fps, st, frames_to_count, cnt = (0, 0, 1, 0)
@@ -69,109 +87,44 @@ class Server():
         frame_rate = 24  # Taxa de quadros desejada (25 FPS)
         frame_interval = 1.0 / frame_rate
         st = time.time()
-        while self.vid.isOpened():
-            ret, frame = self.vid.read()
-            if not ret:
-                break
+        i = 0
+        try:
+            while self.vid.isOpened():
+                ret, frame = self.vid.read()
+                if not ret:
+                    break
 
-            frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
-            frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
+                frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+                frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
 
-            frame_size = len(frame_data)
-            self.client_socket.send(frame_size.to_bytes(4, byteorder='big'))
-            self.client_socket.send(frame_data)
+                frame_size = len(frame_data)
+                self.client_socket.send(frame_size.to_bytes(4, byteorder='big'))
+                self.client_socket.send(frame_data)
 
-            
-            # Calcule o tempo decorrido desde o último envio
-            elapsed_time = time.time() - st
+                
+                # Calcule o tempo decorrido desde o último envio
+                elapsed_time = time.time() - st
 
-            # Aguarde o tempo restante para manter a taxa de quadros
-            time.sleep(max(0, frame_interval - elapsed_time - 0.002))
+                # Aguarde o tempo restante para manter a taxa de quadros
+                time.sleep(max(0, frame_interval - elapsed_time - 0.01))
 
-            st = time.time()
+                st = time.time()
 
-            # Converte os dados do frame em uma imagem
-            img = ImageTk.PhotoImage(data=frame_data)
+                # Converte os dados do frame em uma imagem
+                img = ImageTk.PhotoImage(data=frame_data)
 
-			# Atualiza a label na janela Tkinter com a nova imagem
-            self.label.configure(image=img)
-            self.label.image = img
-            self.janela.update()
-        
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
-                os._exit(1)
-                self.TS = False
-                break
+                # Atualiza a label na janela Tkinter com a nova imagem
+                self.label.configure(image=img)
+                self.label.image = img
+                self.janela.update()
+                i+=1
+        finally:
+            print("frames- ",i)
+            print('Player closed')
+            self.BREAK = True
+            self.vid.release()
 
-        print('Player closed')
-        self.BREAK = True
-        self.vid.release()
 
-        '''
-        import socket
-import cv2
-import numpy as np
-import tkinter as tk
-from tkinter import Label
-from tkinter import PhotoImage
-
-# Configurações do servidor
-HOST = '127.0.0.1'  # Endereço IP do servidor
-PORT = 12345  # Porta do servidor
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
-
-# Inicializa a janela Tkinter
-root = tk.Tk()
-root.title("Video Stream Server")
-
-# Inicializa uma label para exibir os frames recebidos
-label = Label(root)
-label.pack()
-
-# Inicializa a conexão do servidor
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind((HOST, PORT))
-server_socket.listen(1)
-print(f"Servidor aguardando conexão em {HOST}:{PORT}")
-
-# Aceita a conexão do cliente
-client_socket, client_address = server_socket.accept()
-print(f"Cliente conectado: {client_address}")
-
-# Inicializa a captura de vídeo (substitua '0' pelo índice da câmera se desejar capturar a partir de uma câmera)
-cap = cv2.VideoCapture(0)
-
-while True:
-    # Captura um frame do vídeo
-    ret, frame = cap.read()
-
-    if not ret:
-        break
-
-    # Redimensiona o frame para o tamanho desejado
-    frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
-
-    # Converte o frame para um formato que pode ser transmitido via socket
-    frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
-
-    # Envie o tamanho do frame e, em seguida, o frame em si para o cliente
-    frame_size = len(frame_data)
-    client_socket.send(frame_size.to_bytes(4, byteorder='big'))
-    client_socket.send(frame_data)
-
-    # Exibe o frame na janela Tkinter
-    img = PhotoImage(data=frame_data)
-    label.config(image=img)
-    label.image = img
-
-# Fecha as conexões e a janela Tkinter quando o loop termina
-cap.release()
-client_socket.close()
-server_socket.close()
-root.destroy()
-'''
 
     def audio_stream(self):
         s = socket.socket()
@@ -179,23 +132,24 @@ root.destroy()
         s.bind(new_address)
 
         s.listen(5)
-        CHUNK = 1024
+        CHUNK = 1024*2
         wf = wave.open(self.audiofile, 'rb')
-        p = pyaudio.PyAudio()
         print('server listening at',new_address)
-        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                        channels=wf.getnchannels(),
-                        rate=wf.getframerate(),
-                        input=True,
-                        frames_per_buffer=CHUNK)
+       
         client_socket,addr = s.accept()
-        while True:
-            if client_socket:
-                while True:
-                    data = wf.readframes(CHUNK)
-                    a = pickle.dumps(data)
-                    message = struct.pack("Q",len(a))+a
-                    client_socket.sendall(message)
+        i=0
+        data = wf.readframes(CHUNK)
+        while data:
+            a = pickle.dumps(data)
+            message = struct.pack("Q",len(a))+a
+            client_socket.sendall(message)
+            data = wf.readframes(CHUNK)
+            i += 1
+        print("audio- ",i)
+        print('Server closed')
+        s.close()
+
+
 
 
 if __name__ == "__main__":
