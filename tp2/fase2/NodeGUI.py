@@ -1,13 +1,32 @@
 import threading
 import socket
+from auxiliarFunc import *
 
 class NodeGUI:
-    def __init__(self, ip):
-        self.IP = None
+    def __init__(self, ip, file):
+        self.janela = None
+        self.IP = ip
         self.portaEscuta = None
         self.adjacentes = []
+        self.parse(file)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((self.IP, self.portaEscuta))
         self.start()
+
+    def parse(self, file):
+        print("Parsing...")
+        with open(file, 'r') as f:
+            read = False
+            for line in f:
+                if f"ip- {self.IP}" in line:
+                    read = True
+                if read:
+                    if "------" in line:
+                        break
+                    elif "neighbour- " in line:
+                        self.adjacentes.append(extrair_neighbour(line))
+                    elif "nodePort- " in line:
+                        self.portaEscuta = extrair_numero_porta(line)
 
     def start(self):
         # ter uma janela que ao ligar tem as opçoes testar conexao e espera o clique para cemçar a testar
@@ -26,7 +45,7 @@ class NodeGUI:
         #quando recebe verifica se o seu nome nao esta presente 
         # se estiver nao faz nada
         # se nao estiver mete o seu ip na mesnagem e envia aos seus visinhos
-        while self.server_socket._close:
+        while self.server_socket:
             try:
                 client_connection, client_address = self.server_socket.accept()
                 print(f"Node {client_address[0]} send connection test to: {self.IP}")
@@ -62,3 +81,18 @@ class NodeGUI:
                 s.close()
             except Exception as e:
                 print("Não foi possivel enviar mensagem")
+
+
+if __name__ == "__main__":
+    try:
+        ips = (
+            "127.0.0.3",
+            "127.0.0.4"
+        )
+        for ip in ips:
+            filename = "config_file.txt"
+            cliente = NodeGUI(ip, filename)
+            #cliente.janela.mainloop()
+
+    except Exception as e:
+        print(f'Ocorreu um erro: {str(e)}')
