@@ -43,9 +43,9 @@ class Packet:
         return packet_data
 
     def parsePacket(self, data):
-        self.name_size = int.from_bytes(data[4:8], byteorder='big')
+        self.name_size = int.from_bytes(data[0:4], byteorder='big')
 
-        offset = 8
+        offset = 4
         self.name_data = data[offset:offset + self.name_size].decode('utf-8')
 
         offset += self.name_size

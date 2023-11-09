@@ -67,7 +67,7 @@ class Cliente:
     
     def sendStream(self, pacote):
         try:
-            self.client_socket.send(pacote.buildPacket())
+            self.client_socket.send(pacote)
 
         except Exception as e:
                 print(e)
@@ -212,12 +212,10 @@ class RPGUI:
             packet_size = int.from_bytes(allpacket_size, byteorder='big')
             
             # Recebe o pacote do servidor
-            packet_data = b""
-            while len(packet_data) < packet_size:
-                packet_data += conn.recv(packet_size - len(packet_data))
-
-            pacote = Packet()
-            pacote.initial2(packet_size, packet_data)
+            pacote= b""
+            pacote += allpacket_size
+            while len(pacote) < packet_size+4:
+                pacote += conn.recv(packet_size+4 - len(pacote))
 
             #Enviar o pacote a todos os clientes
             for cli in sStream.clientList:
