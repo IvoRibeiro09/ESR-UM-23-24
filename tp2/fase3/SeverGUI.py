@@ -5,10 +5,12 @@ import queue
 import time
 import cv2
 import tkinter as tk
-from PIL import Image,ImageTk
+from PIL import ImageTk
+from connectionProtocol import *
+import wave
 
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
+class Stream:
+    pass
 
 class ServerGUI:
 
@@ -19,6 +21,7 @@ class ServerGUI:
         self.portaDoRP = None
          # Inicializa a janela Tkinter
         self.janela = tk.Tk()
+        self.janela.geometry("+100+50")
         self.janela.title("Video Stream Client")
 
         # Inicializa uma label para exibir os frames recebidos
@@ -104,25 +107,21 @@ class ServerGUI:
                     ret, frame = sstream.read()
                     if not ret:
                         break
-
-                    frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
-                    frame_data = cv2.imencode('.jpg', frame)[1].tobytes()
-
-                    frame_size = len(frame_data)
-                    self.server_socket.send(frame_size.to_bytes(4, byteorder='big'))
-                    self.server_socket.send(frame_data)
-
+                    
+                    pacote = Packet()
+                    pacote.initial1(streamName, frame)
+                    self.server_socket.send(pacote.buildPacket())
                     
                     # Calcule o tempo decorrido desde o último envio
                     elapsed_time = time.time() - st
 
                     # Aguarde o tempo restante para manter a taxa de quadros
-                    time.sleep(max(0, frame_interval - elapsed_time - 0.01))
+                    time.sleep(max(0, frame_interval - elapsed_time))
 
                     st = time.time()
 
                     # Converte os dados do frame em uma imagem
-                    img = ImageTk.PhotoImage(data=frame_data)
+                    img = ImageTk.PhotoImage(data=pacote.frame_data)
 
                     # Atualiza a label na janela Tkinter com a nova imagem
                     self.label.configure(image=img)

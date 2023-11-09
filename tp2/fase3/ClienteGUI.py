@@ -3,6 +3,7 @@ import socket
 from auxiliarFunc import *
 import threading
 from PIL import Image, ImageTk
+from connectionProtocol import Packet
 
 class ClienteGUI:
 
@@ -42,13 +43,6 @@ class ClienteGUI:
                 thread = threading.Thread(target=self.streamTransmission())
                 thread.start()
                 thread.join()
-                '''
-                self.clinetNewStart()
-                with self.condition:
-                    while not self.conditionBool:
-                        self.condition.wait()
-                self.conditionBool = False
-                '''
             except Exception as e:
                 print(e)
             
@@ -80,6 +74,7 @@ class ClienteGUI:
     def clienteInterface(self):
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {self.IP}")
+        self.janela.geometry("+1000+50")
         print("Show interface1...")
         i = 0
         spacing = 10
@@ -115,6 +110,7 @@ class ClienteGUI:
         print("Cliente aguarda video...")
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {self.IP}")
+        self.janela.geometry("+1000+50")
         
         # tela de display de video
         self.label = tk.Label(self.janela, width=640, height=480, bg='white')
@@ -138,18 +134,21 @@ class ClienteGUI:
         while not self.server_socket._closed:
             print("Frame: ",i)
             try:
-                # Recebe o tamanho do frame (4 bytes) do servidor
-                frame_size_bytes = self.server_socket.recv(4)
-                frame_size = int.from_bytes(frame_size_bytes, byteorder='big')
-
-				# Recebe o frame do servidor
-                frame_data = b""
-                while len(frame_data) < frame_size:
-                    frame_data += self.server_socket.recv(frame_size - len(frame_data))
+                #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
+                allpacket_size = self.server_socket.recv(4)
+                packet_size = int.from_bytes(allpacket_size, byteorder='big')
                 
+                # Recebe o pacote do servidor
+                packet_data = b""
+                while len(packet_data) < packet_size:
+                    packet_data += self.server_socket.recv(packet_size - len(packet_data))
+
+                pacote = Packet()
+                pacote.initial2(packet_size, packet_data)
+
                 if self.status == "Playing":
                     # Converte os dados do frame em uma imagem
-                    img = ImageTk.PhotoImage(data=frame_data)
+                    img = ImageTk.PhotoImage(data= pacote.frame_data)
 
                     # Atualiza a label na janela Tkinter com a nova imagem
                     self.label.configure(image=img)
@@ -176,7 +175,7 @@ class ClienteGUI:
         print("Closing Stream...")
         self.server_socket.close()
         self.janela.destroy()
-    '''
+    
     def clinetNewStart(self):
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {self.IP}")
@@ -199,27 +198,30 @@ class ClienteGUI:
         self.janela.mainloop()
 
     def yesbutton(self):
-        self.clientClose == True
+        global OnOff
+        OnOff = True
         self.conditionBool = True
         with self.condition:
             self.condition.notify()
         self.janela.destroy()
 
     def nobutton(self):
-        self.clientClose == False
+        global OnOff
+        OnOff = False
         self.conditionBool = True
         with self.condition:
             self.condition.notify()
         self.janela.destroy()
-        '''
         
-
+        
+OnOff = True
 if __name__ == "__main__":
     try:
-        while True:
+        while OnOff:
             filename = "config_file.txt"
             cliente = ClienteGUI(filename)
             cliente.janela.mainloop()
+            cliente.clinetNewStart()
     except Exception as e:
         print(f"Erro: {e}")
         print("[Usage: Cliente.py]\n")

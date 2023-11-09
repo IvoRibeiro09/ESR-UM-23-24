@@ -3,8 +3,7 @@ import threading
 from time import sleep
 import tkinter as tk
 from auxiliarFunc import *
-import queue
-
+from connectionProtocol import Packet
 class Stream():
     def __init__(self, name, event):
         self.name = name
@@ -66,10 +65,10 @@ class Cliente:
             print("Erro durante a comunicação com o cliente:", str(e))
             return None
     
-    def sendStream(self, frame_size_bytes, frame_data):
+    def sendStream(self, pacote):
         try:
-            self.client_socket.send(frame_size_bytes)
-            self.client_socket.send(frame_data)
+            self.client_socket.send(pacote.buildPacket())
+
         except Exception as e:
                 print(e)
 
@@ -208,20 +207,22 @@ class RPGUI:
         i = 0
         while True:
             print("Frame: ", i)
-            #parse packet
-            # Recebe o tamanho do frame (4 bytes) do servidor
-            frame_size_bytes = conn.recv(4)
-            frame_size = int.from_bytes(frame_size_bytes, byteorder='big')
+            #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
+            allpacket_size = conn.recv(4)
+            packet_size = int.from_bytes(allpacket_size, byteorder='big')
+            
+            # Recebe o pacote do servidor
+            packet_data = b""
+            while len(packet_data) < packet_size:
+                packet_data += conn.recv(packet_size - len(packet_data))
 
-            # Recebe o frame do servidor
-            frame_data = b""
-            while len(frame_data) < frame_size:
-                frame_data += conn.recv(frame_size - len(frame_data))
+            pacote = Packet()
+            pacote.initial2(packet_size, packet_data)
 
-            #send to clients
+            #Enviar o pacote a todos os clientes
             for cli in sStream.clientList:
                 try:
-                    cli.sendStream(frame_size_bytes, frame_data)
+                    cli.sendStream(pacote)
                 except Exception as e:
                     print(e)
             i+=1
