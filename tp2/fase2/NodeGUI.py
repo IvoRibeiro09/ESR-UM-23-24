@@ -85,14 +85,13 @@ class NodeGUI:
 
 if __name__ == "__main__":
     try:
-        ips = (
-            "127.0.0.3",
-            "127.0.0.4"
-        )
-        for ip in ips:
-            filename = "config_file.txt"
-            cliente = NodeGUI(ip, filename)
-            #cliente.janela.mainloop()
+        # Obtém o endereço IP local da máquina
+        ip = input("IP da maquina atual:")
+        filename = "config_file.txt"
+        print(ip)
+        filename = "config_file.txt"
+        node = NodeGUI(ip, filename)
+        #node.janela.mainloop()
 
     except Exception as e:
         print(f'Ocorreu um erro: {str(e)}')
