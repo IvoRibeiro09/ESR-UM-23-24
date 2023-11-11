@@ -82,21 +82,33 @@ stream- ../VIDEO/videoB.mp4
 ------
 test on localHost
 ------
+type- RendezvousPoint
 ip- 127.0.0.1
+nodePort- 11111
+neighbour- 127.0.0.2 - 11111
 portaClient- 12345
 portaServer- 12346
 ------
+type- Server
 ip- 127.0.0.2
-ip_rp- 127.0.0.1
-porta_rp- 12346
+nodePort- 11111
+neighbour- 127.0.0.1 - 11111
+neighbour- 127.0.0.3 - 11111
+neighbour- 127.0.0.4 - 11111
+rp- 127.0.0.1 - 12346
 stream- ../VIDEO/video.mp4
 stream- ../VIDEO/videoA.mp4
 stream- ../VIDEO/videoB.mp4
 ------
+type- Client
 ip- 127.0.0.3
-neighbour- 127.0.0.1 - 12345
+nodePort- 11111
+neighbour- 127.0.0.2 - 11111
+rp- 127.0.0.1 - 12345
 ------
+type- Client
 ip- 127.0.0.4
-neighbour- 127.0.0.1 - 12345
-neighbour- 127.0.0.4 - 11111
+nodePort- 11111
+neighbour- 127.0.0.2 - 11111
+rp- 127.0.0.1 - 12345
 ------

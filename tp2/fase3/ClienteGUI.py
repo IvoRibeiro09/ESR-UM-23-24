@@ -9,7 +9,6 @@ class ClienteGUI:
 
     def __init__(self, file):
         self.janela = None
-        #self.IP = getIP
         self.IP = '127.0.0.4'
         self.adjacentes = []
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -82,12 +82,7 @@ class RPGUI:
         self.PORTASERVER = None
         self.socketForServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socketForClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
         self.streamList = []
-
-        #self.condition = threading.Condition()
-        #self.clientQueue = queue.Queue(maxsize=10)
-        
         self.parse(file)
         self.startRP()
 
