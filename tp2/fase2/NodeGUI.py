@@ -1,3 +1,4 @@
+from time import sleep
 import threading
 import socket
 from auxiliarFunc import *
@@ -24,6 +25,9 @@ class NodeGUI:
         thread1 = threading.Thread(target=self.connectionTest)
         thread0.start()
         thread1.start()
+        thread1.join()
+        self.server_socket.close()
+        print("Initial connectoin done!")
     
     def connectionTest(self):
         self.janela = tk.Tk()
@@ -50,6 +54,7 @@ class NodeGUI:
 
         msg = NodeData.getIp(self.node)
         self.sendMessageToAdjacentNodes(msg)
+        sleep(60*5)
 
     def startTest(self):
         with self.condition:
@@ -86,7 +91,44 @@ class NodeGUI:
 
             except Exception as e:
                 print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
-                
+      '''import socket
+
+def recieveConnection(self):
+    # ... Seu código anterior ...
+
+    self.server_socket.settimeout(300)  # Defina o tempo limite para 5 minutos (300 segundos)
+
+    while self.nodeState:
+        try:
+            client_connection, client_address = self.server_socket.accept()
+            print(f"Node {client_address[0]} send connection test to: {NodeData.getIp(self.node)}")
+
+            # Restaure o tempo limite para None para a próxima iteração
+            self.server_socket.settimeout(None)
+
+            size = client_connection.recv(4)
+            msg_size = int.from_bytes(size, byteorder='big')
+                    
+            msg = b""
+            while len(msg) < msg_size:
+                msg += client_connection.recv(msg_size - len(msg))
+                    
+            mensagem = msg.decode('utf-8')
+
+            if NodeData.getIp(self.node) not in mensagem:
+                mensagem = mensagem + " <- " + NodeData.getIp(self.node)
+                self.sendMessageToAdjacentNodes(mensagem)
+
+        except socket.timeout:
+            print(f"Nenhum cliente conectou-se ao Node {NodeData.getIp(self.node)} dentro do tempo limite. Parando a receção de conexões.")
+            break
+
+        except Exception as e:
+            print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
+
+    # Feche o soquete do servidor após a conclusão do loop
+    self.server_socket.close()
+'''          
     def sendMessageToAdjacentNodes(self, mensagem):
         for adj in NodeData.getNeighboursAddress(self.node): 
             try:

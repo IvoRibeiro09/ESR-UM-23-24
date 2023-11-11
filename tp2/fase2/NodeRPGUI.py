@@ -1,4 +1,5 @@
 import socket
+import threading
 from auxiliarFunc import *
 from NodeData import *
 
@@ -14,6 +15,10 @@ class NodeRPGUI:
 
     def start(self):
         print("Starting...")
+        thread0 = threading.Thread(target=self.recieveConnection)
+        thread0.start()
+
+    def recieveConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getPortaEscuta(self.node))
         self.server_socket.bind(socket_address)
         self.server_socket.listen()
