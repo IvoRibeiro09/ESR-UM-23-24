@@ -5,10 +5,12 @@ class Stream():
     def __init__(self, name, server, caminhos):
         self.name = name
         self.server_address = server
-        #self.clientList = []
         self.status = "Closed" # "Pending" "Streaming"
         self.caminhosdoRP = caminhos
-        self.caminhoDaStream = []
+        self.caminhoDaStream = ""
+        self.clientList = []
+        #udp socket
+        self.stream_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # 127.0.0.5 <- 127.0.0.4 <- 127.0.0.3
         # 127.0.0.5 <- 127.0.0.4 | 127.0.0.4 <- 127.0.0.3
 
@@ -27,14 +29,17 @@ class Stream():
     def addClient(self, ip_cliente):
         if self.status == "Closed":
             self.status = "Pending"
+            # e cria o caminho ideal para enviar a stream
+            
+            # abre a socket udp para receber os pacotes de video 
+            
             # notify server to start stream tpc
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
                 server_socket.connect(self.server_address[0], self.server_address[1])
                 print("Conectado com o servidor")
                 server_socket.send(f"Stream- {self.name}")
                 server_socket.close()
-            # abre a socket udp para receber os pacotes de video 
-            # e cria o caminho ideal para enviar a stream
+            
 
         elif self.status == "Streaming":
             pass

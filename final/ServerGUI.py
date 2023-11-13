@@ -1,5 +1,4 @@
 import socket 
-from auxiliarFunc import *
 import threading
 import queue
 import time
@@ -7,51 +6,24 @@ import cv2
 import tkinter as tk
 from PIL import ImageTk
 from connectionProtocol import *
-import wave
 
 class Stream:
     pass
 
 class ServerGUI:
 
-    def __init__(self, file):
-        #self.IP = getIP
-        self.IP = '127.0.0.2'
-        self.ipDoRP = None
-        self.portaDoRP = None
-         # Inicializa a janela Tkinter
+    def __init__(self, node):
+        self.node = node
+        # Inicializa a janela Tkinter
         self.janela = tk.Tk()
         self.janela.geometry("+100+50")
         self.janela.title("Video Stream Client")
-
-        # Inicializa uma label para exibir os frames recebidos
         self.label = tk.Label(self.janela)
         self.label.pack()
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.videoList = []
         self.streamQueue = queue.Queue()
-        self.parse(file)
         self.serverStarter()
-
-    def parse(self, file):
-        print("Parsing...")
-        with open(file, 'r') as f:
-            read = False
-            for line in f:
-                if f"ip- {self.IP}" in line:
-                    read = True
-                if read:
-                    if "------" in line:
-                        break
-                    elif "ip_rp- " in line:
-                        self.ipDoRP = extrair_conteudo(line)
-                    elif "porta_rp- " in line:
-                        self.portaDoRP = extrair_numero_porta(line)
-                    elif "stream- " in line:
-                        file = extrair_conteudo(line)
-                        filename = getVideoName(file)
-                        self.videoList.append((filename, file))
 
     def serverStarter(self):
         print("Starter...")
@@ -130,13 +102,3 @@ class ServerGUI:
                     i+=1
             finally:
                 print('Player closed')
-
-
-if __name__ == "__main__":
-    try:
-        filename = "config_file.txt"
-
-        # Criar um Servidor
-        rp = ServerGUI(filename)
-    except:
-        print("[Usage: Server.py]\n")	

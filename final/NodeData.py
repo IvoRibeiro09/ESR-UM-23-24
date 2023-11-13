@@ -5,7 +5,8 @@ class NodeData:
     def __init__(self, ip , file):
         self.IP = ip
         self.type = None
-        self.porta_escuta = None
+        self.node_port = None
+        self.stream_port = None
         self.neighbours_address = []
         self.RP_address = None
         self.PORTACLIENT = None
@@ -20,8 +21,11 @@ class NodeData:
     def getType(self):
         return str(self.type)
     
-    def getPortaEscuta(self):
-        return int(self.porta_escuta)
+    def getNodePort(self):
+        return int(self.node_port)
+    
+    def getStreamPort(self):
+        return int(self.stream_port)
     
     def getNeighboursAddress(self):
         return list(self.neighbours_address)
@@ -45,8 +49,11 @@ class NodeData:
     def setType(self, type):
         self.type = type
 
-    def setPortaEscuta(self, porta):
-        self.porta_escuta = porta
+    def setNodePort(self, porta):
+        self.node_port = porta
+
+    def setStreamPort(self, porta):
+        self.stream_port = porta
 
     def setNeighboursAddress(self, neigh):
         self.neighbours_address.append(neigh)
@@ -76,9 +83,11 @@ class NodeData:
                         if "type- " in line:
                             self.setType(extrair_texto(line))
                         elif "nodePort- " in line:
-                            self.setPortaEscuta(extrair_numero(line))
+                            self.setNodePort(extrair_numero(line))
+                        elif "streamPort- " in line:
+                            self.setStreamPort(extrair_numero(line))
                         elif "neighbour- " in line:
-                            self.setNeighboursAddress(extrair_texto_numero(line))
+                            self.setNeighboursAddress(extrair_texto(line))
                         elif "rp- " in line:
                             self.setRPAddress(extrair_texto_numero(line))
                         elif "portaClient- " in line:
@@ -99,12 +108,18 @@ class NodeData:
         print("-----------------------------------------------")
         print("IP: " + self.IP)
         print("Tipo: " + self.type)
-        print("Porta_Escuta: "+ str(self.porta_escuta))
+        if self.node_port:
+            print("Porta para Nós: "+ str(self.node_port))
+        if self.stream_port:
+            print("Porta para Streams: "+ str(self.stream_port))
         for i in self.neighbours_address:
             print("Nó Adjacente: " + i)
-        print("IP do rp: " + self.RP_address)
-        print("Porta Client: " + str(self.PORTACLIENT))
-        print("Porta Server: " + str(self.PORTASERVER))
+        if self.RP_address:
+            print("IP do rp: " + self.RP_address)
+        if self.PORTACLIENT:
+            print("Porta Client: " + str(self.PORTACLIENT))
+        if self.PORTASERVER:
+            print("Porta Server: " + str(self.PORTASERVER))
         for i in self.stream_list:
             print("Streams: " + i)
         print("-----------------------------------------------")

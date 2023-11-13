@@ -1,49 +1,31 @@
 import tkinter as tk
 import socket
-from auxiliarFunc import *
 import threading
-from PIL import Image, ImageTk
+from PIL import ImageTk
 from connectionProtocol import Packet
 
 class ClienteGUI:
 
-    def __init__(self, file):
-        self.janela = None
-        self.IP = '127.0.0.3'
-        self.adjacentes = []
+    def __init__(self, node):
+        self.node = node
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.streansNoRP = None
         self.condition = threading.Condition()
         self.conditionBool = False
         self.status = "Playing"
         self.clientClose = True
-        self.parse(file)
         self.clientStart()
-
-    def parse(self, file):
-        print("Parsing...")
-        with open(file, 'r') as f:
-            read = False
-            for line in f:
-                if f"ip- {self.IP}" in line:
-                    read = True
-                if read:
-                    if "------" in line:
-                        break
-                    elif "neighbour- " in line:
-                        self.adjacentes.append(extrair_neighbour(line))
         
     def clientStart(self):
-        
-            try:
-                print("Starter...")
-                self.inicialConnection()
-                self.askStreamTransmission()
-                thread = threading.Thread(target=self.streamTransmission())
-                thread.start()
-                thread.join()
-            except Exception as e:
-                print(e)
+        try:
+            print("Starter...")
+            self.inicialConnection()
+            self.askStreamTransmission()
+            thread = threading.Thread(target=self.streamTransmission())
+            thread.start()
+            thread.join()
+        except Exception as e:
+            print(e)
             
     def inicialConnection(self):
         #conectar ao servidor 
@@ -211,16 +193,4 @@ class ClienteGUI:
         with self.condition:
             self.condition.notify()
         self.janela.destroy()
-        
-        
-OnOff = True
-if __name__ == "__main__":
-    try:
-        while OnOff:
-            filename = "config_file.txt"
-            cliente = ClienteGUI(filename)
-            cliente.janela.mainloop()
-            cliente.clinetNewStart()
-    except Exception as e:
-        print(f"Erro: {e}")
-        print("[Usage: Cliente.py]\n")
+    

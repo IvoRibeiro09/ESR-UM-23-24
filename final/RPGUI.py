@@ -1,10 +1,10 @@
 import socket
 import threading
 from time import sleep
-import tkinter as tk
 from auxiliarFunc import *
-from connectionProtocol import Packet as pack
+from connectionProtocol import *
 from Stream import *
+from NodeData import *
 
 class Cliente:
     def __init__(self, conn, addr):
@@ -107,43 +107,55 @@ class Server:
 
 class RPGUI:
 
-    def __init__(self, file):
-        #self.IP = getIP
-        self.IP = '127.0.0.1'
-        self.PORTACLIENT = None
-        self.PORTASERVER = None
+    def __init__(self, node):
+        self.node = node
         self.socketForServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socketForClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.streamList = []
-        self.caminhos = ["127.0.0.4 <- 127.0.0.3 <- 127.0.0.2"]
-        self.parse(file)
+        self.caminhos = []
         self.startRP()
-
-    def parse(self, file):
-        print("Parsing...")
-        with open(file, 'r') as f:
-            read = False
-            for line in f:
-                if f"ip- {self.IP}" in line:
-                    read = True
-                if read:
-                    if "------" in line:
-                        break
-                    elif "portaClient- " in line:
-                        self.PORTACLIENT = extrair_numero_porta(line)
-                    elif "portaServer- " in line:
-                        self.PORTASERVER = extrair_numero_porta(line)
 
     def startRP(self):
         print("Starting...")
-        thread0 = threading.Thread(target=self.clientConnection)
-        thread1 = threading.Thread(target=self.serverConnection)
+        thread0 = threading.Thread(target=self.recieveNodeConnection)
+        thread1 = threading.Thread(target=self.clientConnection)
+        thread2 = threading.Thread(target=self.serverConnection)
         thread0.start()
         thread1.start()
+        thread2.start()
 
+    #-----------------------------------------------------------------------------------------
+    # Tratamento de Nós
+    def recieveNodeConnection(self):
+        socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_socket:
+            node_socket.bind(socket_address)
+            node_socket.listen()
+            print("RP à espera dos caminhos para os nós: ", socket_address)
+            while True:
+                try:
+                    client_connection, = node_socket.accept()
+
+                    size = client_connection.recv(4)
+                    msg_size = int.from_bytes(size, byteorder='big')
+
+                    msg = b""
+                    while len(msg) < msg_size:
+                        msg += client_connection.recv(msg_size - len(msg))
+
+                    mensagem = msg.decode('utf-8')
+                    print(mensagem)
+                    self.caminhos.append(mensagem)
+                    client_connection.close()
+                except Exception as e:
+                    print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
+                finally:
+                    node_socket.close()
+
+    #-----------------------------------------------------------------------------------------
     # Tratamento de Clientes
     def clientConnection(self):
-        socket_address = (self.IP, self.PORTACLIENT)
+        socket_address = (NodeData.getIp(self.node), NodeData.getPortaClient(self.node))
         self.socketForClient.bind(socket_address)
         self.socketForClient.listen()
         print("RP à espera de conexão de Clientes: ", socket_address)
@@ -175,7 +187,7 @@ class RPGUI:
     #-----------------------------------------------------------------------------------------
     # Tratamento de Servidores
     def serverConnection(self):
-        socket_address = (self.IP, self.PORTASERVER)
+        socket_address = (NodeData.getIp(self.node), NodeData.getPortaServer(self.node))
         self.socketForServer.bind(socket_address)
         self.socketForServer.listen()
         print("RP à espera de conexões de Servidores: ", socket_address)
@@ -195,12 +207,3 @@ class RPGUI:
             servidor.initialServerConnection()
         finally:
             conn.close()
-    
-
-if __name__ == "__main__":
-    try:
-        filename = "config_file.txt"
-        # Criar um RP
-        rp = RPGUI(filename)
-    except:
-        print("[Usage: RP.py]\n")	
