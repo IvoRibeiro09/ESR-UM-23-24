@@ -1,6 +1,6 @@
-from time import sleep
 import threading
 import socket
+import time
 from auxiliarFunc import *
 import tkinter as tk
 from NodeData import *
@@ -10,8 +10,6 @@ class NodeGUI:
     def __init__(self, node):
         self.janela = None
         self.node = node
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.nodeState = True
         self.condition = threading.Condition()
         self.conditionBool = False
         self.start()
@@ -25,9 +23,19 @@ class NodeGUI:
         thread1 = threading.Thread(target=self.connectionTest)
         thread0.start()
         thread1.start()
+        thread0.join()
         thread1.join()
-        self.server_socket.close()
         print("Initial connectoin done!")
+        '''
+        while True:
+            time.sleep(6)
+            thread0 = threading.Thread(target=self.recieveConnection)
+            thread1 = threading.Thread(target=self.connectionVerify)
+            thread0.start()
+            thread1.start()
+            thread0.join()
+            thread1.join()
+        '''
     
     def connectionTest(self):
         self.janela = tk.Tk()
@@ -54,7 +62,13 @@ class NodeGUI:
 
         msg = NodeData.getIp(self.node)
         self.sendMessageToAdjacentNodes(msg)
-        sleep(60*5)
+        print("Connection test done!")
+
+    def connectionVerify(self):
+        time.sleep(30)
+        msg = NodeData.getIp(self.node)
+        self.sendMessageToAdjacentNodes(msg)
+        print("Connection test done!")
 
     def startTest(self):
         with self.condition:
@@ -69,66 +83,36 @@ class NodeGUI:
         # se nao estiver mete o seu ip na mesnagem e envia aos seus visinhos
         print("Recieving...")
         socket_address = (NodeData.getIp(self.node), NodeData.getPortaEscuta(self.node))
-        self.server_socket.bind(socket_address)
-        self.server_socket.listen()
-        while self.nodeState:
-            try:
-                client_connection, client_address = self.server_socket.accept()
-                print(f"Node {client_address[0]} send connection test to: {NodeData.getIp(self.node)}")
 
-                size = client_connection.recv(4)
-                msg_size = int.from_bytes(size, byteorder='big')
-                        
-                msg = b""
-                while len(msg) < msg_size:
-                    msg += client_connection.recv(msg_size - len(msg))
-                        
-                mensagem = msg.decode('utf-8')
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+            server_socket.bind(socket_address)
+            server_socket.listen()
+            server_socket.settimeout(30)  # 1 min de escuta
 
-                if NodeData.getIp(self.node) not in mensagem:
-                    mensagem = mensagem + " <- " + NodeData.getIp(self.node)
-                    self.sendMessageToAdjacentNodes(mensagem)
+            while True:
+                try:
+                    client_connection, client_address = server_socket.accept()
+                    client_connection.settimeout(60)  # Defina o timeout para o recebimento de dados
 
-            except Exception as e:
-                print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
-      '''import socket
+                    size = client_connection.recv(4)
+                    msg_size = int.from_bytes(size, byteorder='big')
 
-def recieveConnection(self):
-    # ... Seu código anterior ...
+                    msg = b""
+                    while len(msg) < msg_size:
+                        msg += client_connection.recv(msg_size - len(msg))
 
-    self.server_socket.settimeout(300)  # Defina o tempo limite para 5 minutos (300 segundos)
+                    mensagem = msg.decode('utf-8')
 
-    while self.nodeState:
-        try:
-            client_connection, client_address = self.server_socket.accept()
-            print(f"Node {client_address[0]} send connection test to: {NodeData.getIp(self.node)}")
+                    if NodeData.getIp(self.node) not in mensagem:
+                        mensagem = mensagem + " <- " + NodeData.getIp(self.node)
+                        self.sendMessageToAdjacentNodes(mensagem)
 
-            # Restaure o tempo limite para None para a próxima iteração
-            self.server_socket.settimeout(None)
+                except socket.timeout:
+                    print(f"Nenhum cliente conectou-se ao Node {NodeData.getIp(self.node)} dentro do tempo limite. Parando a receção de conexões.")
+                    break
+                except Exception as e:
+                    print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
 
-            size = client_connection.recv(4)
-            msg_size = int.from_bytes(size, byteorder='big')
-                    
-            msg = b""
-            while len(msg) < msg_size:
-                msg += client_connection.recv(msg_size - len(msg))
-                    
-            mensagem = msg.decode('utf-8')
-
-            if NodeData.getIp(self.node) not in mensagem:
-                mensagem = mensagem + " <- " + NodeData.getIp(self.node)
-                self.sendMessageToAdjacentNodes(mensagem)
-
-        except socket.timeout:
-            print(f"Nenhum cliente conectou-se ao Node {NodeData.getIp(self.node)} dentro do tempo limite. Parando a receção de conexões.")
-            break
-
-        except Exception as e:
-            print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
-
-    # Feche o soquete do servidor após a conclusão do loop
-    self.server_socket.close()
-'''          
     def sendMessageToAdjacentNodes(self, mensagem):
         for adj in NodeData.getNeighboursAddress(self.node): 
             try:

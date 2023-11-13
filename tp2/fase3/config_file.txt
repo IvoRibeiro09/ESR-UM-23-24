@@ -13,6 +13,11 @@ stream- ../VIDEO/videoB.mp4
 ------
 ip- 127.0.0.3
 neighbour- 127.0.0.1 - 12345
+neighbour- 127.0.0.4 - 12345
+neighbour- 127.0.0.5 - 12345
 ------
 ip- 127.0.0.4
-neighbour- 127.0.0.1 - 12345
+neighbour- 127.0.0.3 - 12345
+------
+ip- 127.0.0.5
+neighbour- 127.0.0.3 - 12345
