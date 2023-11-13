@@ -1,7 +1,6 @@
 import threading
 import socket
 import time
-from auxiliarFunc import *
 import tkinter as tk
 from NodeData import *
 
@@ -23,19 +22,6 @@ class NodeGUI:
         thread1 = threading.Thread(target=self.connectionTest)
         thread0.start()
         thread1.start()
-        thread0.join()
-        thread1.join()
-        print("Initial connectoin done!")
-        '''
-        while True:
-            time.sleep(6)
-            thread0 = threading.Thread(target=self.recieveConnection)
-            thread1 = threading.Thread(target=self.connectionVerify)
-            thread0.start()
-            thread1.start()
-            thread0.join()
-            thread1.join()
-        '''
 
     def connectionTest(self):
         self.janela = tk.Tk()
@@ -64,12 +50,6 @@ class NodeGUI:
         self.sendMessageToAdjacentNodes(msg)
         print("Connection test done!")
 
-    def connectionVerify(self):
-        time.sleep(30)
-        msg = NodeData.getIp(self.node)
-        self.sendMessageToAdjacentNodes(msg)
-        print("Connection test done!")
-
     def startTest(self):
         with self.condition:
             self.conditionBool = True
@@ -82,16 +62,14 @@ class NodeGUI:
         # se estiver nao faz nada
         # se nao estiver mete o seu ip na mesnagem e envia aos seus visinhos
         print("Recieving...")
-        socket_address = (NodeData.getIp(self.node), NodeData.getPortaEscuta(self.node))
+        socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind(socket_address)
             server_socket.listen()
-            server_socket.settimeout(30)  # 1 min de escuta
-
             while True:
                 try:
-                    client_connection, client_address = server_socket.accept()
+                    client_connection, _ = server_socket.accept()
                     client_connection.settimeout(60)  # Defina o timeout para o recebimento de dados
 
                     size = client_connection.recv(4)
@@ -130,3 +108,9 @@ class NodeGUI:
             finally:
                 # Certifique-se de que a conexão seja fechada mesmo em caso de exceção
                 s.close()
+
+    def connectionVerify(self):
+        time.sleep(30)
+        msg = NodeData.getIp(self.node)
+        self.sendMessageToAdjacentNodes(msg)
+        print("Connection test done!")

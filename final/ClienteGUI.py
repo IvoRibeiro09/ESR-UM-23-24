@@ -3,6 +3,7 @@ import socket
 import threading
 from PIL import ImageTk
 from connectionProtocol import Packet
+from NodeData import *
 
 class ClienteGUI:
 
@@ -29,7 +30,7 @@ class ClienteGUI:
             
     def inicialConnection(self):
         #conectar ao servidor 
-        socket_address = self.adjacentes[0]
+        socket_address = NodeData.getRPAddress(self.node)
         self.server_socket.connect(socket_address)
         #pedir os videos que ele tem 
         try:

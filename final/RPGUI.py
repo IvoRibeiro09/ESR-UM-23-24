@@ -35,7 +35,8 @@ class Cliente:
                 return None
             data = self.client_socket.recv(1024)
             mensagem = data.decode()
-            vid = extrair_conteudo(mensagem)
+            vid = extrair_texto(mensagem)
+
             print(f"Cliente {self.ip} pediu a visualização da stream: {vid}")
             return vid
         except Exception as e:

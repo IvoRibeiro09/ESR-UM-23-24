@@ -6,9 +6,9 @@ import cv2
 import tkinter as tk
 from PIL import ImageTk
 from connectionProtocol import *
+from NodeData import *
 
-class Stream:
-    pass
+#class Stream:
 
 class ServerGUI:
 
@@ -33,12 +33,12 @@ class ServerGUI:
     
     def conectToRP(self):
         try:
-            server_address = (self.ipDoRP, self.portaDoRP)
+            server_address = (NodeData.getRPAddress(self.node))
             self.server_socket.connect(server_address)
             print("Servidor conectado ao RP")
     
             # enviar os videos que você tem para exibir
-            for video in self.videoList:
+            for video in NodeData.getStreamList(self.node):
                 msg = f"{video[0]}-ADD-".encode('utf-8')
                 self.server_socket.sendall(msg)
 
@@ -54,17 +54,17 @@ class ServerGUI:
                 break
             mensagem = data.decode('utf-8')
             if "Stream- " in mensagem:
-                self.streamQueue.put(extrair_conteudo(mensagem))
+                self.streamQueue.put(extrair_texto(mensagem))
                 thread = threading.Thread(target=self.sendStream)
                 thread.start()
-                self.janela.mainloop()
+                #self.janela.mainloop()
 
 
     def sendStream(self):
         streamName = self.streamQueue.get()
         print(f"Vou streamar o video: {streamName}")
         streampath = None
-        for video in self.videoList:
+        for video in NodeData.getStreamList(self.node):
             if video[0]== streamName:
                 streampath = video[1]
         if streampath:

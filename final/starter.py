@@ -1,5 +1,4 @@
 from NodeGUI import NodeGUI
-from NodeRPGUI import NodeRPGUI
 from NodeData import NodeData
 from RPGUI import RPGUI
 from ClienteGUI import ClienteGUI
