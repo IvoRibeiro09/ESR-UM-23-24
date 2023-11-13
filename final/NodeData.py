@@ -68,7 +68,7 @@ class NodeData:
         self.PORTASERVER = pserver
 
     def setStreamList(self, stream):
-        self.stream_list.append(stream)
+        self.stream_list.append((getVideoName(stream), stream))
 
     # Function to parse the config file
     def parse_file(self, filepath):
@@ -115,11 +115,11 @@ class NodeData:
         for i in self.neighbours_address:
             print("Nó Adjacente: " + i)
         if self.RP_address:
-            print("IP do rp: " + self.RP_address)
+            print("IP do rp: " + str(self.RP_address))
         if self.PORTACLIENT:
             print("Porta Client: " + str(self.PORTACLIENT))
         if self.PORTASERVER:
             print("Porta Server: " + str(self.PORTASERVER))
         for i in self.stream_list:
-            print("Streams: " + i)
+            print("Streams: " + str(i))
         print("-----------------------------------------------")

@@ -55,7 +55,7 @@ class ClienteGUI:
 
     def clienteInterface(self):
         self.janela = tk.Tk()
-        self.janela.title(f"Cliente {self.IP}")
+        self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.janela.geometry("+1000+50")
         print("Show interface1...")
         i = 0
@@ -91,7 +91,7 @@ class ClienteGUI:
     def streamTransmission(self):
         print("Cliente aguarda video...")
         self.janela = tk.Tk()
-        self.janela.title(f"Cliente {self.IP}")
+        self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.janela.geometry("+1000+50")
         
         # tela de display de video

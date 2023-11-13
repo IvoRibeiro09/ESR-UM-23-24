@@ -98,6 +98,7 @@ type- RendezvousPoint
 nodePort- 11111
 streamPort- 22222
 neighbour- 127.0.0.2
+neighbour- 127.0.0.3
 portaClient- 12345
 portaServer- 12346
 ------
@@ -106,7 +107,6 @@ type- Server
 nodePort- 11111
 streamPort- 22222
 neighbour- 127.0.0.1
-neighbour- 127.0.0.3
 rp- 127.0.0.1 - 12346
 stream- ../VIDEO/video.mp4
 stream- ../VIDEO/videoA.mp4
@@ -116,7 +116,7 @@ ip- 127.0.0.3
 type- Node
 nodePort- 11111
 streamPort- 22222
-neighbour- 127.0.0.2
+neighbour- 127.0.0.1
 ------
 ip- 127.0.0.4
 type- Node

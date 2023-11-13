@@ -22,6 +22,7 @@ class NodeGUI:
         thread1 = threading.Thread(target=self.connectionTest)
         thread0.start()
         thread1.start()
+        thread1.join()
 
     def connectionTest(self):
         self.janela = tk.Tk()
@@ -95,7 +96,7 @@ class NodeGUI:
         for adj in NodeData.getNeighboursAddress(self.node): 
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((adj[0], adj[1]))
+                    s.connect((adj, NodeData.getNodePort(self.node)))
 
                     msg = (
                         len(mensagem).to_bytes(4, 'big') +
@@ -104,7 +105,7 @@ class NodeGUI:
                     s.sendall(msg)
                 
             except Exception as e:
-                print(f"Não foi possível enviar mensagem para {adj[1]}:{adj[2]}. Erro: {str(e)}")
+                print(f"Não foi possível enviar mensagem para {adj[0]}:{adj[1]}. Erro: {str(e)}")
             finally:
                 # Certifique-se de que a conexão seja fechada mesmo em caso de exceção
                 s.close()

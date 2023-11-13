@@ -20,52 +20,50 @@ class ServerGUI:
         self.janela.title("Video Stream Client")
         self.label = tk.Label(self.janela)
         self.label.pack()
-
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.streamQueue = queue.Queue()
         self.serverStarter()
 
     def serverStarter(self):
         print("Starter...")
         self.conectToRP()
-        self.streamStarter()
-        self.server_socket.close()
-    
+        
     def conectToRP(self):
-        try:
-            server_address = (NodeData.getRPAddress(self.node))
-            self.server_socket.connect(server_address)
-            print("Servidor conectado ao RP")
-    
-            # enviar os videos que você tem para exibir
-            for video in NodeData.getStreamList(self.node):
-                msg = f"{video[0]}-ADD-".encode('utf-8')
-                self.server_socket.sendall(msg)
+        server_address = (NodeData.getRPAddress(self.node))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as rp_socket:
+            try:
+                rp_socket.connect(server_address)
+                print("Servidor conectado ao RP")
+        
+                # enviar os videos que você tem para exibir
+                msg = ""
+                for stream in NodeData.getStreamList(self.node):
+                    msg += f"{stream[0]}-ADD-"
 
-            print("RP informado dos vídeos que o servidor tem disponíveis...")
-        except Exception as e:
-            print(f"Erro ao conectar ou enviar mensagens: {e}")
+                msg = msg[:-5] 
+                data = msg.encode()
+                rp_socket.sendall(data)
+                print(msg)
+                print("RP informado dos vídeos que o servidor tem disponíveis...")
 
-    def streamStarter(self):
-        print("Server à espera de pedidos de Stream do RP")
-        while True:
-            data = self.server_socket.recv(1024)
-            if not data:
-                break
-            mensagem = data.decode('utf-8')
-            if "Stream- " in mensagem:
-                self.streamQueue.put(extrair_texto(mensagem))
-                thread = threading.Thread(target=self.sendStream)
-                thread.start()
-                #self.janela.mainloop()
+                print("Server à espera de pedidos de Stream do RP")
+                while True:
+                    data = rp_socket.recv(1024)
+                    if not data:
+                        break
+                    mensagem = data.decode('utf-8')
+                    if "Stream- " in mensagem:
+                        thread = threading.Thread(target=self.sendStream, args=(extrair_texto(mensagem)))
+                        thread.start()
 
+            except Exception as e:
+                print(f"Erro ao conectar ou enviar mensagens: {e}")
+            finally:
+                rp_socket.close()
 
-    def sendStream(self):
-        streamName = self.streamQueue.get()
+    def sendStream(self, streamName):
         print(f"Vou streamar o video: {streamName}")
         streampath = None
         for video in NodeData.getStreamList(self.node):
-            if video[0]== streamName:
+            if video[0] == streamName:
                 streampath = video[1]
         if streampath:
             sstream = cv2.VideoCapture(streampath)
