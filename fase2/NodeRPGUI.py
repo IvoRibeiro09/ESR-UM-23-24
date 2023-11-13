@@ -1,6 +1,7 @@
 import socket
 from auxiliarFunc import *
 from NodeData import *
+import threading
 
 class NodeRPGUI:
 
@@ -12,14 +13,13 @@ class NodeRPGUI:
 
     def start(self):
         print("Starting...")
-<<<<<<< HEAD
+
         thread0 = threading.Thread(target=self.recieveConnection)
         thread0.start()
 
     def recieveConnection(self):
         print("Recieving...")
-=======
->>>>>>> parent of cca561f (update)
+
         socket_address = (NodeData.getIp(self.node), NodeData.getPortaEscuta(self.node))
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:

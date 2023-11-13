@@ -1,3 +1,4 @@
+import socket
 
 class Stream():
 
@@ -23,10 +24,15 @@ class Stream():
     
     # setters
     
-    def addClient(self, c):
+    def addClient(self, ip_cliente):
         if self.status == "Closed":
             self.status = "Pending"
             # notify server to start stream tpc
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+                server_socket.connect(self.server_address[0], self.server_address[1])
+                print("Conectado com o servidor")
+                server_socket.send(f"Stream- {self.name}")
+                server_socket.close()
             # abre a socket udp para receber os pacotes de video 
             # e cria o caminho ideal para enviar a stream
 
