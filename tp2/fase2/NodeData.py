@@ -101,13 +101,10 @@ class NodeData:
         print("Tipo: " + self.type)
         print("Porta_Escuta: "+ str(self.porta_escuta))
         for i in self.neighbours_address:
-            print("Nó Adjacente: " + str(i))
-        if self.RP_address:
-            print("IP do rp: " + str(self.RP_address))
-        if self.PORTACLIENT:
-            print("Porta Client: " + str(self.PORTACLIENT))
-        if self.PORTASERVER:
-            print("Porta Server: " + str(self.PORTASERVER))
+            print("Nó Adjacente: " + i)
+        print("IP do rp: " + self.RP_address)
+        print("Porta Client: " + str(self.PORTACLIENT))
+        print("Porta Server: " + str(self.PORTASERVER))
         for i in self.stream_list:
             print("Streams: " + i)
         print("-----------------------------------------------")

@@ -23,6 +23,7 @@ class NodeGUI:
         thread1 = threading.Thread(target=self.connectionTest)
         thread0.start()
         thread1.start()
+<<<<<<< HEAD
         thread0.join()
         thread1.join()
         print("Initial connectoin done!")
@@ -36,6 +37,8 @@ class NodeGUI:
             thread0.join()
             thread1.join()
         '''
+=======
+>>>>>>> parent of cca561f (update)
     
     def connectionTest(self):
         self.janela = tk.Tk()
@@ -62,6 +65,7 @@ class NodeGUI:
 
         msg = NodeData.getIp(self.node)
         self.sendMessageToAdjacentNodes(msg)
+<<<<<<< HEAD
         print("Connection test done!")
 
     def connectionVerify(self):
@@ -69,6 +73,8 @@ class NodeGUI:
         msg = NodeData.getIp(self.node)
         self.sendMessageToAdjacentNodes(msg)
         print("Connection test done!")
+=======
+>>>>>>> parent of cca561f (update)
 
     def startTest(self):
         with self.condition:
@@ -94,6 +100,7 @@ class NodeGUI:
                     client_connection, client_address = server_socket.accept()
                     client_connection.settimeout(60)  # Defina o timeout para o recebimento de dados
 
+<<<<<<< HEAD
                     size = client_connection.recv(4)
                     msg_size = int.from_bytes(size, byteorder='big')
 
@@ -113,6 +120,11 @@ class NodeGUI:
                 except Exception as e:
                     print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
 
+=======
+            except Exception as e:
+                print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
+                
+>>>>>>> parent of cca561f (update)
     def sendMessageToAdjacentNodes(self, mensagem):
         for adj in NodeData.getNeighboursAddress(self.node): 
             try:
