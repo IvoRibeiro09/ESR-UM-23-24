@@ -140,16 +140,15 @@ class RPGUI:
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
     def streamConnection(self):
-        socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
-        my_address = (NodeData.getIp(self.node), 0) 
+        my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node)) 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
                 socketForStream.bind(my_address)
-                print("RP à espera de conexões de Streams: ", socket_address)
+                print("RP à espera de conexões de Streams: ", my_address)
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size,_ = socketForStream.recvfrom(4)
+                    allpacket_size, _ = socketForStream.recvfrom(4)
                     print("Frame: ", i)
                     packet_size = int.from_bytes(allpacket_size, byteorder='big')
                     
@@ -157,7 +156,7 @@ class RPGUI:
                     pacote_data = b""
                     pacote_data += allpacket_size
                     while len(pacote_data) < packet_size + 4:
-                        data, _ = socketForStream.recv(packet_size + 4 - len(pacote_data))
+                        data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
                         pacote_data += data
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
