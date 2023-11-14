@@ -130,7 +130,7 @@ class RPGUI:
             lista_de_videos = mensagem.split('-AND-')
             
             for videoname in lista_de_videos:
-                stream = Stream(videoname,('127.0.0.2',NodeData.getPortaServer(self.node)), self.caminhos)
+                stream = Stream(videoname,(addr[0],NodeData.getPortaServer(self.node)), self.caminhos)
                 self.streamList.append(stream)
             
             print(f'Videos disponíveis: {lista_de_videos}')
@@ -141,14 +141,15 @@ class RPGUI:
     # Receber de Streams e enviar
     def streamConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        my_address = (NodeData.getIp(self.node), 0) 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
-                socketForStream.connect(socket_address)
+                socketForStream.bind(my_address)
                 print("RP à espera de conexões de Streams: ", socket_address)
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size = socketForStream.recv(4)
+                    allpacket_size,_ = socketForStream.recvfrom(4)
                     print("Frame: ", i)
                     packet_size = int.from_bytes(allpacket_size, byteorder='big')
                     
@@ -156,10 +157,11 @@ class RPGUI:
                     pacote_data = b""
                     pacote_data += allpacket_size
                     while len(pacote_data) < packet_size + 4:
-                        pacote_data += socketForStream.recv(packet_size + 4 - len(pacote_data))
-
+                        data, _ = socketForStream.recv(packet_size + 4 - len(pacote_data))
+                        pacote_data += data
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
+                    print(Packet.getFrameData(pacote).decode('utf-8'))
 
                     stream_track = ""
                     for stream in self.streamList:

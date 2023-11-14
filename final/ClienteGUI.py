@@ -30,8 +30,10 @@ class ClienteGUI:
             
     def inicialConnection(self):
         #conectar ao servidor 
-        socket_address = NodeData.getRPAddress(self.node)
-        self.server_socket.connect(socket_address)
+        rp_address = NodeData.getRPAddress(self.node)
+        cliente_address = (NodeData.getIp(self.node), 0)
+        self.server_socket.bind(cliente_address)
+        self.server_socket.connect(rp_address)
         #pedir os videos que ele tem 
         try:
             message = "VideoList"

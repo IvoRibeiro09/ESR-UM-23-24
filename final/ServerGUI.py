@@ -29,10 +29,12 @@ class ServerGUI:
         self.receberPedidos()
         
     def conectToRP(self):
-        server_address = (NodeData.getRPAddress(self.node))
+        server_address = (NodeData.getIp(self.node),0)
+        rp_address = (NodeData.getRPAddress(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as rp_socket:
             try:
-                rp_socket.connect(server_address)
+                rp_socket.bind(server_address)
+                rp_socket.connect(rp_address)
                 print("Servidor conectado ao RP")
         
                 # enviar os videos que você tem para exibir
@@ -82,10 +84,11 @@ class ServerGUI:
             if video[0] == streamName:
                 streampath = video[1]
         if streampath:
-            socket_address = (NodeData.getRPAddress(self.node)[0], NodeData.getStreamPort(self.node))
+            rp_address = (NodeData.getRPAddress(self.node)[0], NodeData.getStreamPort(self.node))
+            server_address = (NodeData.getIp(self.node), 0)
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                 try:
-                    stream_socket.connect(socket_address)
+                    stream_socket.bind(server_address)
                     sstream = cv2.VideoCapture(streampath)
                     fps =  sstream.get(cv2.CAP_PROP_FPS)
                     frame_interval = 1.0 / fps
@@ -99,7 +102,8 @@ class ServerGUI:
                         pacote = Packet()
                         Packet.initial1(pacote, streamName, frame, i)
                         pacote_data = Packet.buildPacket(pacote)
-                        stream_socket.send(pacote_data)
+                        stream_socket.sendto(pacote_data, rp_address)
+                        print("PAcket sendo to ",rp_address)
                         
                         # Calcule o tempo decorrido desde o último envio
                         elapsed_time = time.time() - st

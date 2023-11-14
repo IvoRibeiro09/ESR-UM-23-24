@@ -27,7 +27,6 @@ class Stream():
     # setters
     
     def addClient(self, ip_cliente):
-        ip_cliente = '127.0.0.5'
         print(f"Client {ip_cliente} connectado à Stream {self.name}")
         if self.status == "Closed":
             self.status = "Pending"
