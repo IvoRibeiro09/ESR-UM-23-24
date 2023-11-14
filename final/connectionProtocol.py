@@ -9,9 +9,9 @@ class Packet:
         self.total_size = None
         self.name_size = None
         self.name_data = None 
-        self.frame_data = None
         self.frame_size = None
-
+        self.frame_data = None
+        
     def initial1(self, name, Frame):
         self.name_data = name.encode('utf-8') 
         self.name_size = len(self.name_data)

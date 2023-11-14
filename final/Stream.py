@@ -9,8 +9,6 @@ class Stream():
         self.caminhosdoRP = caminhos
         self.caminhoDaStream = ""
         self.clientList = []
-        #udp socket
-        self.stream_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # 127.0.0.5 <- 127.0.0.4 <- 127.0.0.3
         # 127.0.0.5 <- 127.0.0.4 | 127.0.0.4 <- 127.0.0.3
 
@@ -27,20 +25,27 @@ class Stream():
     # setters
     
     def addClient(self, ip_cliente):
+        ip_cliente = '127.0.0.5'
+        print(f"Client {ip_cliente} connectado à Stream {self.name}")
         if self.status == "Closed":
             self.status = "Pending"
             # e cria o caminho ideal para enviar a stream
+            self.caminhoDaStream = "127.0.0.3 -> 127.0.0.4 | 127.0.0.4 -> 127.0.0.5"
             
-            # abre a socket udp para receber os pacotes de video 
-            
-            # notify server to start stream tpc
+            # notify server to start stream tpc 
+            server_address = (self.server_address)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-                server_socket.connect(self.server_address[0], self.server_address[1])
-                print("Conectado com o servidor")
-                server_socket.send(f"Stream- {self.name}")
-                server_socket.close()
+                try:
+                    server_socket.connect(server_address)
             
-
+                    msg = f"Stream- {self.name}"
+                    data = msg.encode('utf-8')
+                    server_socket.send(data)
+                except Exception as e:
+                    print(f"Erro ao conectar ou enviar mensagens de stream ao servidor: {e}")
+                finally:
+                    server_socket.close()   
+            self.status = "Streaming"
         elif self.status == "Streaming":
             pass
         # verificar se o caminho pode ser commun e se poder alterar o caminho de envio

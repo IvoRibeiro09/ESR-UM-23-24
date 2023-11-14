@@ -27,7 +27,7 @@ class RPGUI:
         socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_socket:
             node_socket.bind(socket_address)
-            node_socket.listen()
+            node_socket.listen(1)
             print("RP à espera dos caminhos para os nós: ", socket_address)
             try:
                 while True:
@@ -55,7 +55,7 @@ class RPGUI:
         socket_address = (NodeData.getIp(self.node), NodeData.getPortaClient(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForClient:
             socketForClient.bind(socket_address)
-            socketForClient.listen()
+            socketForClient.listen(1)
             print("RP à espera de conexão de Clientes: ", socket_address)
             try:
                 while True:
@@ -88,10 +88,14 @@ class RPGUI:
             selectedStream = extrair_texto(recv_msg)
 
             print(f"Cliente {addr[0]} pediu a visualização da stream: {selectedStream}")
-            return selectedStream
+
+            for stream in self.streamList:
+                if Stream.getName(stream) == selectedStream:
+                    Stream.addClient(stream, addr[0])
+                    break
+
         except Exception as e:
             print(f"Erro no processamento do cliente {addr[0]}: {e}")
-            return None
         finally:
             conn.close()
 
@@ -101,7 +105,7 @@ class RPGUI:
         socket_address = (NodeData.getIp(self.node), NodeData.getPortaServer(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForServer:
             socketForServer.bind(socket_address)
-            socketForServer.listen()
+            socketForServer.listen(1)
             print("RP à espera de conexões de Servidores: ", socket_address)
             try:
                 while True:
@@ -120,15 +124,53 @@ class RPGUI:
             mensagem = data.decode('utf-8')
             # Processar e responder às mensagens recebidas aqui
             lista_de_videos = mensagem.split('-ADD-')
-            vids = lista_de_videos.pop()
             
-            for videoname in vids:
-                stream = Stream(videoname, addr, self.caminhos)
+            for videoname in lista_de_videos:
+                stream = Stream(videoname,('127.0.0.2',NodeData.getPortaServer(self.node)), self.caminhos)
                 self.streamList.append(stream)
             
-            print(f'Videos disponíveis: {self.streamList}')
+            print(f'Videos disponíveis: {lista_de_videos}')
         except Exception as e:
             print(f"Erro no processamento do servidor {addr[0]}: {e}")
-            return None
+        
+    #-----------------------------------------------------------------------------------------
+    # Receber de Streams e enviar
+    serverConnection
+    def serverConnection(self):
+        socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
+            try:
+                socketForStream.bind(socket_address)
+                socketForStream.listen(1)
+                print("RP à espera de conexões de Streams: ", socket_address)
+                while True:
+                    conn, addr = socketForStream.accept()
+                    print(f"Servidor {addr} conectado!")
+                    thread = threading.Thread(target=self.receiveAndSendStreams, args=(conn, addr))
+                    thread.start()
+            except Exception as e:
+                print(f"Erro no processamento do cliente {addr[0]}: {e}")
+            finally:
+                socketForStream.close()
+        
+    def receiveAndSendStreams(self, conn, addr):
+        try:
+            i=0
+            while conn:
+                print("Frame: ", i)
+                #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
+                allpacket_size = conn.recv(4)
+                packet_size = int.from_bytes(allpacket_size, byteorder='big')
+                
+                # Recebe o pacote do servidor
+                pacote= b""
+                pacote += allpacket_size
+                while len(pacote) < packet_size + 4:
+                    pacote += conn.recv(packet_size + 4 - len(pacote))
+
+                
+                i+=1
+        except Exception as e:
+                print(f"Erro no processamento da Stream {addr[0]}: {e}")
         finally:
-            conn.close()
+                conn.close()
