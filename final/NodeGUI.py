@@ -3,6 +3,7 @@ import socket
 import time
 import tkinter as tk
 from NodeData import *
+from Packet import *
 
 class NodeGUI:
 
@@ -23,6 +24,9 @@ class NodeGUI:
         thread0.start()
         thread1.start()
         thread1.join()
+        if NodeData.getType(self.node) == "Node":
+            thread2 = threading.Thread(target=self.streamConnection)
+            thread2.start()
 
     def connectionTest(self):
         self.janela = tk.Tk()
@@ -115,3 +119,40 @@ class NodeGUI:
         msg = NodeData.getIp(self.node)
         self.sendMessageToAdjacentNodes(msg)
         print("Connection test done!")
+
+    #-----------------------------------------------------------------------------------------
+    # Receber de Streams e enviar
+    def streamConnection(self):
+        socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
+            try:
+               # socketForStream.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
+                socketForStream.bind(socket_address)
+                print(f"{socket_address} à espera de conexões de Streams: ")
+                i=0
+                while True:
+                    #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
+                    allpacket_size = socketForStream.recv(4)
+                    print("Frame: ", i)
+                    packet_size = int.from_bytes(allpacket_size, byteorder='big')
+                    
+                    # Recebe o pacote do servidor
+                    pacote_data = b""
+                    pacote_data += allpacket_size
+                    while len(pacote_data) < packet_size + 4:
+                        pacote_data += socketForStream.recv(packet_size + 4 - len(pacote_data))
+
+                    pacote = Packet()
+                    Packet.parsePacket(pacote, pacote_data)
+                    for node in NodeData.getNeighboursAddress(self.node):
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream_socket:
+                            try:
+                                stream_socket.sendto(pacote, node, NodeData.getStreamPort(self.node))
+                            except Exception as e:
+                                print(f"Erro na Stream a partir do {NodeData.getIp(self.node)}: {e}")
+                            finally:
+                                stream_socket.close()
+            except Exception as e:
+                print(f"Erro no streaming no Nó{NodeData.getIp(self.node)}: {e}")
+            finally:
+                socketForStream.close()

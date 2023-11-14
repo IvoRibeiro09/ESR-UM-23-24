@@ -2,7 +2,7 @@ import tkinter as tk
 import socket
 import threading
 from PIL import ImageTk
-from connectionProtocol import Packet
+from Packet import *
 from NodeData import *
 
 class ClienteGUI:
@@ -113,35 +113,43 @@ class ClienteGUI:
         
         # recebe o video em bytes do cliente
         i = 0
-        while not self.server_socket._closed:
-            print("Frame: ",i)
+        socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
             try:
-                #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                allpacket_size = self.server_socket.recv(4)
-                packet_size = int.from_bytes(allpacket_size, byteorder='big')
-                
-                # Recebe o pacote do servidor
-                packet_data = b""
-                while len(packet_data) < packet_size:
-                    packet_data += self.server_socket.recv(packet_size - len(packet_data))
+               # socketForStream.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
+                socketForStream.bind(socket_address)
+                print(f"{socket_address} à espera de conexões de Streams: ")
+                i=0
+                while True:
+                    #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
+                    allpacket_size = socketForStream.recv(4)
+                    print("Frame: ", i)
+                    packet_size = int.from_bytes(allpacket_size, byteorder='big')
+                    
+                    # Recebe o pacote do servidor
+                    pacote_data = b""
+                    pacote_data += allpacket_size
+                    while len(pacote_data) < packet_size + 4:
+                        pacote_data += socketForStream.recv(packet_size + 4 - len(pacote_data))
 
-                pacote = Packet()
-                pacote.initial2(packet_size, packet_data)
+                    pacote = Packet()
+                    Packet.parsePacket(pacote, pacote_data)
 
-                if self.status == "Playing":
-                    # Converte os dados do frame em uma imagem
-                    img = ImageTk.PhotoImage(data= pacote.frame_data)
+                    if self.status == "Playing":
+                        # Converte os dados do frame em uma imagem
+                        img = ImageTk.PhotoImage(data= Packet.getFrameData(pacote))
 
-                    # Atualiza a label na janela Tkinter com a nova imagem
-                    self.label.configure(image=img)
-                    self.label.image = img
-                    #self.janela.update()
-                self.janela.update()
+                        # Atualiza a label na janela Tkinter com a nova imagem
+                        self.label.configure(image=img)
+                        self.label.image = img
+                        #self.janela.update()
+                    self.janela.update()
+                    i+=1
 
             except Exception as e:
-                # Registre a exceção para fins de depuração
                 print(f"Erro ao receber vídeo: {e}")
-            i+=1
+            finally:
+                socketForStream.close()
 
     def pauseStream(self):
         if self.status == "Playing":

@@ -5,9 +5,9 @@ import time
 import cv2
 import tkinter as tk
 from PIL import ImageTk
-from connectionProtocol import *
+from Packet import *
 from NodeData import *
-
+BUFFER_SIZE = 110000
 #class Stream:
 
 class ServerGUI:
@@ -67,13 +67,13 @@ class ServerGUI:
                         self.streaming_streams.append(extrair_texto(mensagem))
                         thread = threading.Thread(target=self.sendStream)
                         thread.start()
+                        self.janela.mainloop()
                     conn.close()
             except Exception as e:
                 print(f"Erro ao receber mensagens do RP: {e}")
             finally:
                 server_socket.close()
 
-    #Refazer
     def sendStream(self):
         streamName = self.streaming_streams.pop()
         print(f"Vou streamar o video: {streamName}")
@@ -82,37 +82,44 @@ class ServerGUI:
             if video[0] == streamName:
                 streampath = video[1]
         if streampath:
-            sstream = cv2.VideoCapture(streampath)
-            fps =  sstream.get(cv2.CAP_PROP_FPS)
-            frame_interval = 1.0 / fps
-            st = time.time()
-            i = 0
-            try:
-                while sstream.isOpened():
-                    print("Frame: ",i)
-                    ret, frame = sstream.read()
-                    if not ret:
-                        break
-                    
-                    pacote = Packet()
-                    pacote.initial1(streamName, frame)
-                    self.server_socket.send(pacote.buildPacket())
-                    
-                    # Calcule o tempo decorrido desde o último envio
-                    elapsed_time = time.time() - st
-
-                    # Aguarde o tempo restante para manter a taxa de quadros
-                    time.sleep(max(0, frame_interval - elapsed_time))
-
+            socket_address = (NodeData.getRPAddress(self.node)[0], NodeData.getStreamPort(self.node))
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream_socket:
+                try:
+                    stream_socket.connect(socket_address)
+                    #stream_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
+                    sstream = cv2.VideoCapture(streampath)
+                    fps =  sstream.get(cv2.CAP_PROP_FPS)
+                    frame_interval = 1.0 / fps
                     st = time.time()
+                    i = 0
+                    while sstream.isOpened():
+                        print("Frame: ",i)
+                        ret, frame = sstream.read()
+                        if not ret:break
+                        
+                        pacote = Packet()
+                        Packet.initial1(pacote, streamName, frame)
+                        pacote_data = Packet.buildPacket(pacote)
+                        stream_socket.sendto(pacote_data, socket_address)
+                        
+                        # Calcule o tempo decorrido desde o último envio
+                        elapsed_time = time.time() - st
 
-                    # Converte os dados do frame em uma imagem
-                    img = ImageTk.PhotoImage(data=pacote.frame_data)
+                        # Aguarde o tempo restante para manter a taxa de quadros
+                        time.sleep(max(0, frame_interval - elapsed_time))
 
-                    # Atualiza a label na janela Tkinter com a nova imagem
-                    self.label.configure(image=img)
-                    self.label.image = img
-                    self.janela.update()
-                    i+=1
-            finally:
-                print('Player closed')
+                        st = time.time()
+
+                        # Converte os dados do frame em uma imagem
+                        img = ImageTk.PhotoImage(data=Packet.getFrameData(pacote))
+
+                        # Atualiza a label na janela Tkinter com a nova imagem
+                        self.label.configure(image=img)
+                        self.label.image = img
+                        self.janela.update()
+                        i+=1
+                    print('Player closed')
+                except Exception as e:
+                    print(f"Erro ao Streamar para o RP: {e}")
+                finally:
+                    stream_socket.close()

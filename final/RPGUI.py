@@ -3,6 +3,8 @@ import threading
 from auxiliarFunc import *
 from Stream import *
 from NodeData import *
+from Packet import *
+BUFFER_SIZE = 110000
 
 class RPGUI:
 
@@ -17,9 +19,11 @@ class RPGUI:
         thread0 = threading.Thread(target=self.recieveNodeConnection)
         thread1 = threading.Thread(target=self.clientConnection)
         thread2 = threading.Thread(target=self.serverConnection)
+        thread3 = threading.Thread(target=self.streamConnection)
         thread0.start()
         thread1.start()
         thread2.start()
+        thread3.start()
 
     #-----------------------------------------------------------------------------------------
     # Tratamento de Nós
@@ -135,42 +139,51 @@ class RPGUI:
         
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
-    serverConnection
-    def serverConnection(self):
+    def streamConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
             try:
+                #socketForStream.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
                 socketForStream.bind(socket_address)
-                socketForStream.listen(1)
                 print("RP à espera de conexões de Streams: ", socket_address)
+                i=0
                 while True:
-                    conn, addr = socketForStream.accept()
-                    print(f"Servidor {addr} conectado!")
-                    thread = threading.Thread(target=self.receiveAndSendStreams, args=(conn, addr))
-                    thread.start()
+                    #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
+                    allpacket_size = socketForStream.recv(4)
+                    print("Frame: ", i)
+                    packet_size = int.from_bytes(allpacket_size, byteorder='big')
+                    
+                    # Recebe o pacote do servidor
+                    pacote_data = b""
+                    pacote_data += allpacket_size
+                    while len(pacote_data) < packet_size + 4:
+                        pacote_data += socketForStream.recv(packet_size + 4 - len(pacote_data))
+
+                    pacote = Packet()
+                    Packet.parsePacket(pacote, pacote_data)
+
+                    stream_track = ""
+                    for stream in self.streamList:
+                        if Stream.getName(stream) == Packet.getName(pacote):
+                            stream_track = Stream.getCaminhoDaStream(stream)
+                    
+                    # descubrir quais os nodos para onde tem de enviar
+                    nodesToSend = []
+                    nodesToSend.append("127.0.0.3")
+                    # contruir o pacote com o resto do caminho
+                    tracked_packet = TrackedPacket.buildTrackedPacket(pacote, stream_track)
+                    # Enviar para todos os nós que estão na lista de envio
+                    for node in nodesToSend:
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream_socket:
+                            try:
+                                stream_socket.sendto(tracked_packet, (node,NodeData.getStreamPort(self.node)))
+                            except Exception as e:
+                                print(f"Erro a enviar a Stream a partir do RP: {e}")
+                            finally:
+                                stream_socket.close()
+                    i+=1
+
             except Exception as e:
-                print(f"Erro no processamento do cliente {addr[0]}: {e}")
+                print(f"Erro no processamento da Stream no RP: {e}")
             finally:
                 socketForStream.close()
-        
-    def receiveAndSendStreams(self, conn, addr):
-        try:
-            i=0
-            while conn:
-                print("Frame: ", i)
-                #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                allpacket_size = conn.recv(4)
-                packet_size = int.from_bytes(allpacket_size, byteorder='big')
-                
-                # Recebe o pacote do servidor
-                pacote= b""
-                pacote += allpacket_size
-                while len(pacote) < packet_size + 4:
-                    pacote += conn.recv(packet_size + 4 - len(pacote))
-
-                
-                i+=1
-        except Exception as e:
-                print(f"Erro no processamento da Stream {addr[0]}: {e}")
-        finally:
-                conn.close()

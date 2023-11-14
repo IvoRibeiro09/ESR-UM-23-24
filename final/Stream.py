@@ -22,6 +22,8 @@ class Stream():
     def getStatus(self):
         return str(self.status)
     
+    def getCaminhoDaStream(self):
+        return str(self.caminhoDaStream)
     # setters
     
     def addClient(self, ip_cliente):
@@ -30,7 +32,7 @@ class Stream():
         if self.status == "Closed":
             self.status = "Pending"
             # e cria o caminho ideal para enviar a stream
-            self.caminhoDaStream = "127.0.0.3 -> 127.0.0.4 | 127.0.0.4 -> 127.0.0.5"
+            self.caminhoDaStream = "127.0.0.1 -> 127.0.0.3 | 127.0.0.3 -> 127.0.0.4 | 127.0.0.4 -> 127.0.0.5"
             
             # notify server to start stream tpc 
             server_address = (self.server_address)
