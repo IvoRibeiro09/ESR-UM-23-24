@@ -90,6 +90,7 @@ class ClienteGUI:
     
     def streamTransmission(self):
         print("Cliente aguarda video...")
+        '''
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.janela.geometry("+1000+50")
@@ -110,14 +111,13 @@ class ClienteGUI:
         self.botaoClose["text"] = "Close"
         self.botaoClose["command"] =  self.closeStream
         self.botaoClose.grid(row=1, column=1, padx=10, pady=10)
-        
+        '''
         # recebe o video em bytes do cliente
         i = 0
         socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
-               # socketForStream.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
-                socketForStream.bind(socket_address)
+                socketForStream.connect(socket_address)
                 print(f"{socket_address} à espera de conexões de Streams: ")
                 i=0
                 while True:
@@ -134,7 +134,8 @@ class ClienteGUI:
 
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
-
+                    print("msg no pacote: ",Packet.getFrameData(pacote).decode('utf-8'))
+                    '''
                     if self.status == "Playing":
                         # Converte os dados do frame em uma imagem
                         img = ImageTk.PhotoImage(data= Packet.getFrameData(pacote))
@@ -144,6 +145,7 @@ class ClienteGUI:
                         self.label.image = img
                         #self.janela.update()
                     self.janela.update()
+                    '''
                     i+=1
 
             except Exception as e:

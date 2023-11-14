@@ -127,7 +127,7 @@ class RPGUI:
             data = conn.recv(1024)
             mensagem = data.decode('utf-8')
             # Processar e responder às mensagens recebidas aqui
-            lista_de_videos = mensagem.split('-ADD-')
+            lista_de_videos = mensagem.split('-AND-')
             
             for videoname in lista_de_videos:
                 stream = Stream(videoname,('127.0.0.2',NodeData.getPortaServer(self.node)), self.caminhos)
@@ -141,10 +141,9 @@ class RPGUI:
     # Receber de Streams e enviar
     def streamConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
-                #socketForStream.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
-                socketForStream.bind(socket_address)
+                socketForStream.connect(socket_address)
                 print("RP à espera de conexões de Streams: ", socket_address)
                 i=0
                 while True:
@@ -174,9 +173,10 @@ class RPGUI:
                     tracked_packet = TrackedPacket.buildTrackedPacket(pacote, stream_track)
                     # Enviar para todos os nós que estão na lista de envio
                     for node in nodesToSend:
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream_socket:
+                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                             try:
-                                stream_socket.sendto(tracked_packet, (node,NodeData.getStreamPort(self.node)))
+                                stream_socket.connect((node, NodeData.getStreamPort(self.node)))
+                                stream_socket.send(tracked_packet)
                             except Exception as e:
                                 print(f"Erro a enviar a Stream a partir do RP: {e}")
                             finally:

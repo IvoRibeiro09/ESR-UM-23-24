@@ -124,10 +124,9 @@ class NodeGUI:
     # Receber de Streams e enviar
     def streamConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForStream:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
-               # socketForStream.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
-                socketForStream.bind(socket_address)
+                socketForStream.connect(socket_address)
                 print(f"{socket_address} à espera de conexões de Streams: ")
                 i=0
                 while True:
@@ -145,9 +144,10 @@ class NodeGUI:
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
                     for node in NodeData.getNeighboursAddress(self.node):
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream_socket:
+                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                             try:
-                                stream_socket.sendto(pacote, node, NodeData.getStreamPort(self.node))
+                                stream_socket.connect((node, NodeData.getStreamPort(self.node)))
+                                stream_socket.send(pacote)
                             except Exception as e:
                                 print(f"Erro na Stream a partir do {NodeData.getIp(self.node)}: {e}")
                             finally:

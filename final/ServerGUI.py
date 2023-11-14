@@ -38,7 +38,7 @@ class ServerGUI:
                 # enviar os videos que você tem para exibir
                 msg = ""
                 for stream in NodeData.getStreamList(self.node):
-                    msg += f"{stream[0]}-ADD-"
+                    msg += f"{stream[0]}-AND-"
 
                 msg = msg[:-5] 
                 data = msg.encode('utf-8')
@@ -83,10 +83,9 @@ class ServerGUI:
                 streampath = video[1]
         if streampath:
             socket_address = (NodeData.getRPAddress(self.node)[0], NodeData.getStreamPort(self.node))
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream_socket:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                 try:
                     stream_socket.connect(socket_address)
-                    #stream_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, BUFFER_SIZE)
                     sstream = cv2.VideoCapture(streampath)
                     fps =  sstream.get(cv2.CAP_PROP_FPS)
                     frame_interval = 1.0 / fps
@@ -98,9 +97,9 @@ class ServerGUI:
                         if not ret:break
                         
                         pacote = Packet()
-                        Packet.initial1(pacote, streamName, frame)
+                        Packet.initial1(pacote, streamName, frame, i)
                         pacote_data = Packet.buildPacket(pacote)
-                        stream_socket.sendto(pacote_data, socket_address)
+                        stream_socket.send(pacote_data)
                         
                         # Calcule o tempo decorrido desde o último envio
                         elapsed_time = time.time() - st
@@ -109,7 +108,7 @@ class ServerGUI:
                         time.sleep(max(0, frame_interval - elapsed_time))
 
                         st = time.time()
-
+                        '''
                         # Converte os dados do frame em uma imagem
                         img = ImageTk.PhotoImage(data=Packet.getFrameData(pacote))
 
@@ -117,6 +116,7 @@ class ServerGUI:
                         self.label.configure(image=img)
                         self.label.image = img
                         self.janela.update()
+                        '''
                         i+=1
                     print('Player closed')
                 except Exception as e:

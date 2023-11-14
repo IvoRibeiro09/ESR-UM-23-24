@@ -12,11 +12,13 @@ class Packet:
         self.frame_size = None
         self.frame_data = None
         
-    def initial1(self, name, Frame):
+    def initial1(self, name, Frame, i):
         self.name_data = name.encode('utf-8') 
         self.name_size = len(self.name_data)
         Frame = cv2.resize(Frame, (FRAME_WIDTH, FRAME_HEIGHT))
-        self.frame_data = cv2.imencode('.jpg', Frame)[1].tobytes()
+        frame_data = cv2.imencode('.jpg', Frame)[1].tobytes()
+        text =  f"Server Frame: {i}"
+        self.frame_data = text.encode('utf-8')
         self.frame_size = len(self.frame_data)
         self.total_size = 4 + 4 + self.name_size + 4 + self.frame_size
 
