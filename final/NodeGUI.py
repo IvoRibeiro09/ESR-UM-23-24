@@ -123,35 +123,43 @@ class NodeGUI:
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
     def streamConnection(self):
-        socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
-                socketForStream.connect(socket_address)
-                print(f"{socket_address} à espera de conexões de Streams: ")
+                socketForStream.bind(my_address)
+                print(f"{my_address} à espera de conexões de Streams: ")
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size = socketForStream.recv(4)
+                    allpacket_size, _ = socketForStream.recvfrom(4)
                     print("Frame: ", i)
+                    i += 1
                     packet_size = int.from_bytes(allpacket_size, byteorder='big')
                     
                     # Recebe o pacote do servidor
                     pacote_data = b""
                     pacote_data += allpacket_size
                     while len(pacote_data) < packet_size + 4:
-                        pacote_data += socketForStream.recv(packet_size + 4 - len(pacote_data))
-
+                        data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
+                        pacote_data += data
+                    '''
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
+                    msgToSend = Packet.buildPacket(pacote)
+                    '''
+                    my_address = (NodeData.getIp(self.node), 0)
                     for node in NodeData.getNeighboursAddress(self.node):
-                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
-                            try:
-                                stream_socket.connect((node, NodeData.getStreamPort(self.node)))
-                                stream_socket.send(pacote)
-                            except Exception as e:
-                                print(f"Erro na Stream a partir do {NodeData.getIp(self.node)}: {e}")
-                            finally:
-                                stream_socket.close()
+                        if node != '127.0.0.1':
+                            send_address = (node, 22222)
+                            print("Send to: ", send_address)
+                            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
+                                try:
+                                    stream_socket.bind(my_address)
+                                    stream_socket.sendto(pacote_data, send_address)
+                                except Exception as e:
+                                    print(f"Erro na Stream a partir do {NodeData.getIp(self.node)}: {e}")
+                                finally:
+                                    stream_socket.close()
             except Exception as e:
                 print(f"Erro no streaming no Nó{NodeData.getIp(self.node)}: {e}")
             finally:

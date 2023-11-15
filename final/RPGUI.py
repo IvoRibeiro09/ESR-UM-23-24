@@ -158,6 +158,7 @@ class RPGUI:
                     while len(pacote_data) < packet_size + 4:
                         data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
                         pacote_data += data
+                    '''
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
                     print(Packet.getFrameData(pacote).decode('utf-8'))
@@ -166,18 +167,23 @@ class RPGUI:
                     for stream in self.streamList:
                         if Stream.getName(stream) == Packet.getName(pacote):
                             stream_track = Stream.getCaminhoDaStream(stream)
-                    
+                    '''
                     # descubrir quais os nodos para onde tem de enviar
                     nodesToSend = []
-                    nodesToSend.append("127.0.0.3")
+                    nodesToSend.append('127.0.0.3')
+                    '''
                     # contruir o pacote com o resto do caminho
-                    tracked_packet = TrackedPacket.buildTrackedPacket(pacote, stream_track)
+                    tracked_packet = TrackedPacket(stream_track, Packet.getFrameData(pacote))
+                    msgToSend = TrackedPacket.buildTrackedPacket(tracked_packet)
+                    '''
                     # Enviar para todos os nós que estão na lista de envio
+                    my_address = (NodeData.getIp(self.node), 0)
                     for node in nodesToSend:
+                        send_address = (node, 22222)
                         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                             try:
-                                stream_socket.connect((node, NodeData.getStreamPort(self.node)))
-                                stream_socket.send(tracked_packet)
+                                stream_socket.bind(my_address)
+                                stream_socket.sendto(pacote_data, send_address)
                             except Exception as e:
                                 print(f"Erro a enviar a Stream a partir do RP: {e}")
                             finally:

@@ -99,11 +99,10 @@ class ServerGUI:
                         ret, frame = sstream.read()
                         if not ret:break
                         
-                        pacote = Packet()
-                        Packet.initial1(pacote, streamName, frame, i)
-                        pacote_data = Packet.buildPacket(pacote)
+                        pacote = Packet(streamName, frame, i)
+                        pacote_data = pacote.buildPacket()
                         stream_socket.sendto(pacote_data, rp_address)
-                        print("PAcket sendo to ",rp_address)
+                        print("Packet sendo to ",rp_address)
                         
                         # Calcule o tempo decorrido desde o último envio
                         elapsed_time = time.time() - st

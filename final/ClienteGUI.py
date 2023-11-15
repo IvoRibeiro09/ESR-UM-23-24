@@ -116,15 +116,15 @@ class ClienteGUI:
         '''
         # recebe o video em bytes do cliente
         i = 0
-        socket_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
-                socketForStream.connect(socket_address)
-                print(f"{socket_address} à espera de conexões de Streams: ")
+                socketForStream.bind(my_address)
+                print(f"{my_address} à espera de conexões de Streams: ")
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size = socketForStream.recv(4)
+                    allpacket_size, _ = socketForStream.recvfrom(4)
                     print("Frame: ", i)
                     packet_size = int.from_bytes(allpacket_size, byteorder='big')
                     
@@ -132,8 +132,8 @@ class ClienteGUI:
                     pacote_data = b""
                     pacote_data += allpacket_size
                     while len(pacote_data) < packet_size + 4:
-                        pacote_data += socketForStream.recv(packet_size + 4 - len(pacote_data))
-
+                        data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
+                        pacote_data += data
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
                     print("msg no pacote: ",Packet.getFrameData(pacote).decode('utf-8'))
