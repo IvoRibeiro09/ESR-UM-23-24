@@ -130,13 +130,13 @@ class ClienteGUI:
                     
                     # Recebe o pacote do servidor
                     pacote_data = b""
-                    pacote_data += allpacket_size
+                    #pacote_data += allpacket_size
                     while len(pacote_data) < packet_size + 4:
                         data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
                         pacote_data += data
-                    pacote = Packet()
-                    Packet.parsePacket(pacote, pacote_data)
-                    print("msg no pacote: ",Packet.getFrameData(pacote).decode('utf-8'))
+
+                    pacote = Packet.parsePacket(pacote_data)
+                    print("msg no pacote: ",Packet.getFrameData(pacote))
                     '''
                     if self.status == "Playing":
                         # Converte os dados do frame em uma imagem

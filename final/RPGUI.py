@@ -148,16 +148,19 @@ class RPGUI:
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size, _ = socketForStream.recvfrom(4)
+                    allpacket_size = socketForStream.recv(4)
                     print("Frame: ", i)
                     packet_size = int.from_bytes(allpacket_size, byteorder='big')
                     
                     # Recebe o pacote do servidor
                     pacote_data = b""
                     pacote_data += allpacket_size
-                    while len(pacote_data) < packet_size + 4:
-                        data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
-                        pacote_data += data
+                    data = socketForStream.recv(packet_size)
+                    pck = Packet(None, None, None)
+                    pck.parsePacket(data)
+                    print(pck.frame_data)
+                    pacote_data += data
+                    
                     '''
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
