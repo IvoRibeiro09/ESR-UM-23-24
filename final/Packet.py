@@ -5,12 +5,11 @@ FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
 class Packet:
-    def __init__(self, name, text, Frame):
+    def __init__(self, name, Frame):
         self.name_data = name
         #Frame = cv2.resize(Frame, (FRAME_WIDTH, FRAME_HEIGHT))
         #frame_data = cv2.imencode('.jpg', Frame)[1].tobytes()
-        self.frame_data = text
-        self.total_size = 0
+        self.frame_data = Frame
 
     # getterss
     def getTotalSize(self): 
@@ -29,9 +28,9 @@ class Packet:
     def buildPacket(self):
         name_bytes = self.name_data.encode('utf-8')
         frame_bytes = self.frame_data.encode('utf-8')
-        self.total_size = 4 + len(name_bytes) + 4 + len(frame_bytes)
+        total_size = 4 + len(name_bytes) + 4 + len(frame_bytes)
         packet_data = (
-            self.total_size.to_bytes(4, byteorder='big') +
+            total_size.to_bytes(4, byteorder='big') +
             len(name_bytes).to_bytes(4, byteorder='big') +
             name_bytes +
             len(frame_bytes).to_bytes(4, byteorder='big') +
@@ -50,6 +49,7 @@ class Packet:
         self.frame_data = data[offset:offset + frame_size].decode('utf-8')
 
 
+#-----------------------------------------------------------------------------------------
 class TrackedPacket:
     def __init__(self, caminho, frame):
         self.track_data = caminho.encode('utf-8') 

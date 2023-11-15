@@ -88,7 +88,7 @@ class ServerGUI:
             server_address = (NodeData.getIp(self.node), 0)
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                 try:
-                    stream_socket.bind(server_address)
+                    #stream_socket.bind(server_address)
                     sstream = cv2.VideoCapture(streampath)
                     fps =  sstream.get(cv2.CAP_PROP_FPS)
                     frame_interval = 1.0 / fps
@@ -100,7 +100,7 @@ class ServerGUI:
                         if not ret:break
                         
                         text = f"Server Frame: {i}"
-                        pacote = Packet(streamName, text, frame)
+                        pacote = Packet(streamName, text)
                         pacote_data = pacote.buildPacket()
                         stream_socket.sendto(pacote_data, rp_address)
                         print(f"Packet {pacote.frame_data} sendo to {rp_address}")

@@ -4,7 +4,6 @@ from auxiliarFunc import *
 from Stream import *
 from NodeData import *
 from Packet import *
-BUFFER_SIZE = 110000
 
 class RPGUI:
 
@@ -140,6 +139,47 @@ class RPGUI:
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
     def streamConnection(self):
+        my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
+            try:
+                socketForStream.bind(my_address)
+                print("RP waiting for Stream connections: ", my_address)
+                i = 0
+                while True:
+                    all_packet_size, _ = socketForStream.recvfrom(4)
+                    print("Frame: ", i)
+                    i+=1
+                    packet_size = int.from_bytes(all_packet_size, byteorder='big')
+                    
+                    # Receive packet data from the server
+                    packet_data = b""
+                    packet_data += all_packet_size
+                    data, _ = socketForStream.recvfrom(packet_size)
+                    
+                    # Parse the packet using your Packet class
+                    received_packet = Packet("", "")
+                    received_packet.parsePacket(data)
+                    print(received_packet.frame_data)
+                    packet_data += data
+                    
+                    # Determine nodes to send the packet to
+                    nodes_to_send = ['127.0.0.3']
+                    
+                    # Send the packet to all nodes in the list
+                    for node in nodes_to_send:
+                        send_address = (node, 22222)
+                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
+                            try:
+                                stream_socket.sendto(packet_data, send_address)
+                            except Exception as e:
+                                print(f"Error sending stream from RP: {e}")
+            except Exception as e:
+                print(f"Error in streamConnection: {e}")
+            finally:
+                socketForStream.close()
+    
+    '''
+    def streamConnection(self):
         my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node)) 
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
@@ -148,20 +188,20 @@ class RPGUI:
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size = socketForStream.recv(4)
+                    allpacket_size, _ = socketForStream.recvfrom(4)
                     print("Frame: ", i)
                     packet_size = int.from_bytes(allpacket_size, byteorder='big')
                     
                     # Recebe o pacote do servidor
                     pacote_data = b""
                     pacote_data += allpacket_size
-                    data = socketForStream.recv(packet_size)
-                    pck = Packet(None, None, None)
+                    data, _ = socketForStream.recvfrom(packet_size)
+                    pck = Packet("", "")
                     pck.parsePacket(data)
                     print(pck.frame_data)
                     pacote_data += data
                     
-                    '''
+                    
                     pacote = Packet()
                     Packet.parsePacket(pacote, pacote_data)
                     print(Packet.getFrameData(pacote).decode('utf-8'))
@@ -170,22 +210,20 @@ class RPGUI:
                     for stream in self.streamList:
                         if Stream.getName(stream) == Packet.getName(pacote):
                             stream_track = Stream.getCaminhoDaStream(stream)
-                    '''
+                    
                     # descubrir quais os nodos para onde tem de enviar
                     nodesToSend = []
                     nodesToSend.append('127.0.0.3')
-                    '''
+                    
                     # contruir o pacote com o resto do caminho
                     tracked_packet = TrackedPacket(stream_track, Packet.getFrameData(pacote))
                     msgToSend = TrackedPacket.buildTrackedPacket(tracked_packet)
-                    '''
+                    
                     # Enviar para todos os nós que estão na lista de envio
-                    my_address = (NodeData.getIp(self.node), 0)
                     for node in nodesToSend:
                         send_address = (node, 22222)
                         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                             try:
-                                stream_socket.bind(my_address)
                                 stream_socket.sendto(pacote_data, send_address)
                             except Exception as e:
                                 print(f"Erro a enviar a Stream a partir do RP: {e}")
@@ -197,3 +235,4 @@ class RPGUI:
                 print(f"Erro no processamento da Stream no RP: {e}")
             finally:
                 socketForStream.close()
+        '''
