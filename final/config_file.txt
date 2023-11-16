@@ -117,13 +117,13 @@ type- Node
 nodePort- 11111
 streamPort- 22222
 neighbour- 127.0.0.4
-neighbours- 127.0.0.1
+neighbour- 127.0.0.1
 ------
 ip- 127.0.0.4
 type- Node
 nodePort- 11111
 streamPort- 22222
-neighbours- 127.0.0.3
+neighbour- 127.0.0.3
 neighbour- 127.0.0.5
 ------
 ip- 127.0.0.5

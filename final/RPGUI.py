@@ -9,7 +9,7 @@ class RPGUI:
 
     def __init__(self, node):
         self.node = node
-        self.streamList = []
+        self.streamList = {}
         self.caminhos = []
         self.startRP()
 
@@ -44,8 +44,10 @@ class RPGUI:
                         msg += client_connection.recv(msg_size - len(msg))
 
                     mensagem = msg.decode('utf-8')
-                    print("caminho: " + mensagem)
-                    self.caminhos.append(mensagem)
+                    mensagem = mensagem + " <- " + NodeData.getIp(self.node)
+                    cam = inverter_relacoes(mensagem)
+                    print("caminho: " + cam)
+                    self.caminhos.append(cam)
                     client_connection.close()
             except Exception as e:
                 print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
@@ -80,8 +82,8 @@ class RPGUI:
                     conn.sendall(noVidmsg.encode())
                 else:
                     msg = ""
-                    for stream in self.streamList:
-                        msg = msg+f"{Stream.getName(stream)}/"    
+                    for stream in self.streamList.keys():
+                        msg += stream+"/"    
                     conn.sendall(msg.encode())
                 print("Lista de vídeos enviada ao cliente: ",addr[0])
             else:
@@ -92,10 +94,8 @@ class RPGUI:
 
             print(f"Cliente {addr[0]} pediu a visualização da stream: {selectedStream}")
 
-            for stream in self.streamList:
-                if Stream.getName(stream) == selectedStream:
-                    Stream.addClient(stream, addr[0])
-                    break
+            stream = self.streamList[selectedStream]
+            Stream.addClient(stream, addr[0], self.caminhos)
 
         except Exception as e:
             print(f"Erro no processamento do cliente {addr[0]}: {e}")
@@ -129,8 +129,8 @@ class RPGUI:
             lista_de_videos = mensagem.split('-AND-')
             
             for videoname in lista_de_videos:
-                stream = Stream(videoname,(addr[0],NodeData.getPortaServer(self.node)), self.caminhos)
-                self.streamList.append(stream)
+                stream = Stream(videoname,(addr[0],NodeData.getPortaServer(self.node)))
+                self.streamList[stream.name] = stream
             
             print(f'Videos disponíveis: {lista_de_videos}')
         except Exception as e:
@@ -146,33 +146,16 @@ class RPGUI:
                 print("RP waiting for Stream connections: ", my_address)
                 i = 0
                 while True:
-                    all_packet_size, _ = socketForStream.recvfrom(4)
-                    print("Frame: ", i)
+                    data, _ = socketForStream.recvfrom(Packet_size)
+                    #print("Frame: ", i)
                     i+=1
-                    packet_size = int.from_bytes(all_packet_size, byteorder='big')
-                    
-                    # Receive packet data from the server
-                    packet_data = b""
-                    packet_data += all_packet_size
-                    data, _ = socketForStream.recvfrom(packet_size)
                     
                     # Parse the packet using your Packet class
                     received_packet = Packet("", "")
                     received_packet.parsePacket(data)
-                    print(received_packet.frame_data)
-                    packet_data += data
+                    stream = self.streamList[received_packet.name_data]
                     
-                    # Determine nodes to send the packet to
-                    nodes_to_send = ['127.0.0.3']
-                    
-                    # Send the packet to all nodes in the list
-                    for node in nodes_to_send:
-                        send_address = (node, 22222)
-                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
-                            try:
-                                stream_socket.sendto(packet_data, send_address)
-                            except Exception as e:
-                                print(f"Error sending stream from RP: {e}")
+                    Stream.sendStream(stream, received_packet.frame_data)
             except Exception as e:
                 print(f"Error in streamConnection: {e}")
             finally:

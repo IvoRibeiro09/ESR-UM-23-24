@@ -85,7 +85,6 @@ class ServerGUI:
                 streampath = video[1]
         if streampath:
             rp_address = (NodeData.getRPAddress(self.node)[0], NodeData.getStreamPort(self.node))
-            server_address = (NodeData.getIp(self.node), 0)
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                 try:
                     #stream_socket.bind(server_address)
@@ -103,7 +102,6 @@ class ServerGUI:
                         pacote = Packet(streamName, text)
                         pacote_data = pacote.buildPacket()
                         stream_socket.sendto(pacote_data, rp_address)
-                        print(f"Packet {pacote.frame_data} sendo to {rp_address}")
                         
                         # Calcule o tempo decorrido desde o último envio
                         elapsed_time = time.time() - st

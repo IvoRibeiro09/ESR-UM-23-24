@@ -87,7 +87,7 @@ class NodeGUI:
                     mensagem = msg.decode('utf-8')
 
                     if NodeData.getIp(self.node) not in mensagem:
-                        mensagem = mensagem + " <- " + NodeData.getIp(self.node)
+                        mensagem = mensagem + " <- " + NodeData.getIp(self.node) + " | " + NodeData.getIp(self.node)
                         self.sendMessageToAdjacentNodes(mensagem)
 
                 except socket.timeout:
@@ -128,25 +128,41 @@ class NodeGUI:
             try:
                 socketForStream.bind(my_address)
                 print(f"{my_address} à espera de conexões de Streams: ")
-                i=0
                 while True:
-                    #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size, _ = socketForStream.recvfrom(4)
-                    print("Frame: ", i)
-                    i += 1
-                    packet_size = int.from_bytes(allpacket_size, byteorder='big')
+                    #parse packet
+                    data, _ = socketForStream.recvfrom(Packet_size)
                     
-                    # Recebe o pacote do servidor
-                    pacote_data = b""
-                    pacote_data += allpacket_size
-                    while len(pacote_data) < packet_size + 4:
-                        data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
-                        pacote_data += data
+                    pck = TrackedPacket("", "")
+                    pck.parseTrackedPacket(data)
+                    caminhos = []
+                    extrair_conexoes(caminhos, pck.track_data)
+                    
+                    #e enviar para todos os clientes
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
+                        try:
+                            for nei in caminhos:
+                                print("caminhos: ", nei)
+                                pckToSend = TrackedPacket(nei[1], pck.frame_data)
+                                dataToSend = pckToSend.buildTrackedPacket()
+                                send_address = (nei[0], Node_Port)
+                                stream_socket.sendto(dataToSend, send_address)
+                        except Exception as e:
+                            print(f"Error sending stream from Node{NodeData.getIp(self.node)}: {e}")
+                        finally:
+                            stream_socket.close()                   
                     '''
-                    pacote = Packet()
-                    Packet.parsePacket(pacote, pacote_data)
-                    msgToSend = Packet.buildPacket(pacote)
-                    '''
+                    #fazer o pacote trackeado
+                    pck = TrackedPacket(self.caminhoDaStream, pacote)
+                    dataToSend = pck.buildTrackedPacket()
+                    #e enviar para todos os clientes
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
+                        try:
+                            for nei in self.NeighbourToSend:
+                                send_address = (nei, Node_Port)
+                                stream_socket.sendto(dataToSend, send_address)
+                        except Exception as e:
+                            print(f"Error sending stream from RP: {e}")
+                    
                     my_address = (NodeData.getIp(self.node), 0)
                     for node in NodeData.getNeighboursAddress(self.node):
                         if node != '127.0.0.1':
@@ -155,12 +171,13 @@ class NodeGUI:
                             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                                 try:
                                     stream_socket.bind(my_address)
-                                    stream_socket.sendto(pacote_data, send_address)
+                                    stream_socket.sendto(data, send_address)
                                 except Exception as e:
                                     print(f"Erro na Stream a partir do {NodeData.getIp(self.node)}: {e}")
                                 finally:
                                     stream_socket.close()
+                    '''
             except Exception as e:
-                print(f"Erro no streaming no Nó{NodeData.getIp(self.node)}: {e}")
+                print(f"Erro no streaming no Nó {NodeData.getIp(self.node)}: {e}")
             finally:
                 socketForStream.close()

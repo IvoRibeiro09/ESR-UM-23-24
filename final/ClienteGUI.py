@@ -124,18 +124,11 @@ class ClienteGUI:
                 i=0
                 while True:
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size, _ = socketForStream.recvfrom(4)
+                    data, _ = socketForStream.recvfrom(Packet_size)
                     print("Frame: ", i)
-                    packet_size = int.from_bytes(allpacket_size, byteorder='big')
-                    
-                    # Recebe o pacote do servidor
-                    pacote_data = b""
-                    #pacote_data += allpacket_size
-                    while len(pacote_data) < packet_size + 4:
-                        data, _ = socketForStream.recvfrom(packet_size + 4 - len(pacote_data))
-                        pacote_data += data
 
-                    pacote = Packet.parsePacket(pacote_data)
+                    pacote = Packet("", "")
+                    Packet.parsePacket(pacote, data)
                     print("msg no pacote: ",Packet.getFrameData(pacote))
                     '''
                     if self.status == "Playing":
