@@ -79,21 +79,23 @@ def extrair_conexoes(lista, input_string):
     
 def possibelToMerge(caminho, Node_Track):
     pares_str1 = extrair_pares(caminho)
+    count=0
     for i in Node_Track:
         pares_str2 = extrair_pares(i[1])
         for par1 in pares_str1:
             for par2 in pares_str2:
                 if par1 == par2:
-                    Node_Track.remove(i)
-                    return i[1]
+                    return count
+        count+=1
     return None  
     
 def mergeCaminhos(caminho, Node_Track):
-    pares_str1 = extrair_pares(caminho)
-    pares_str2 = extrair_pares(Node_Track)
+    pares_str1 = extrair_pares(caminho[1])
+    pares_str2 = extrair_pares(Node_Track[1])
     novos_pares = [par2 for par2 in pares_str2 if par2 not in pares_str1]
     pares_combinados = pares_str1 + novos_pares
-    return ' | '.join([f"{par[0]} -> {par[1]}" for par in pares_combinados])
+    resto = ' | '.join([f"{par[0]} -> {par[1]}" for par in pares_combinados])
+    return (Node_Track[0], resto)
 
 def extrair_pares(input_string):
         if "|" in input_string:

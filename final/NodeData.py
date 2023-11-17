@@ -72,7 +72,6 @@ class NodeData:
 
     # Function to parse the config file
     def parse_file(self, filepath):
-        print("Parsing...")
         try:
             with open(filepath, 'r') as f:
                 read = False

@@ -31,7 +31,7 @@ class RPGUI:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_socket:
             node_socket.bind(socket_address)
             node_socket.listen(1)
-            print("RP à espera dos caminhos para os nós: ", socket_address)
+            print("RP waiting for Node connections: ", socket_address)
             try:
                 while True:
                     client_connection,_ = node_socket.accept()
@@ -46,7 +46,7 @@ class RPGUI:
                     mensagem = msg.decode('utf-8')
                     mensagem = mensagem + " <- " + NodeData.getIp(self.node)
                     cam = inverter_relacoes(mensagem)
-                    print("caminho: " + cam)
+                    print("New connection: " + cam)
                     self.caminhos.append(cam)
                     client_connection.close()
             except Exception as e:
@@ -61,11 +61,11 @@ class RPGUI:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForClient:
             socketForClient.bind(socket_address)
             socketForClient.listen(1)
-            print("RP à espera de conexão de Clientes: ", socket_address)
+            print("RP waiting for Client connections: ", socket_address)
             try:
                 while True:
                     conn, addr = socketForClient.accept()
-                    print(f"Cliente {addr} conectado!")
+                    print(f"Client {addr} connected!")
                     thread = threading.Thread(target=self.initialClientConn, args=(conn, addr))
                     thread.start()
             finally:
@@ -85,18 +85,14 @@ class RPGUI:
                     for stream in self.streamList.keys():
                         msg += stream+"/"    
                     conn.sendall(msg.encode())
-                print("Lista de vídeos enviada ao cliente: ",addr[0])
-            else:
-                print("Mensagem não reconhecida:", mensagem)
-                return None
-            recv_msg = conn.recv(1024).decode()
-            selectedStream = extrair_texto(recv_msg)
+            
+                    recv_msg = conn.recv(1024).decode()
+                    selectedStream = extrair_texto(recv_msg)
 
-            print(f"Cliente {addr[0]} pediu a visualização da stream: {selectedStream}")
+                    print(f"Client {addr[0]} ask for stream: {selectedStream}")
 
-            stream = self.streamList[selectedStream]
-            Stream.addClient(stream, addr[0], self.caminhos)
-
+                    stream = self.streamList[selectedStream]
+                    Stream.addClient(stream, addr[0], self.caminhos)
         except Exception as e:
             print(f"Erro no processamento do cliente {addr[0]}: {e}")
         finally:
@@ -109,11 +105,11 @@ class RPGUI:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socketForServer:
             socketForServer.bind(socket_address)
             socketForServer.listen(1)
-            print("RP à espera de conexões de Servidores: ", socket_address)
+            print("RP waiting for Server connections: ", socket_address)
             try:
                 while True:
                     conn, addr = socketForServer.accept()
-                    print(f"Servidor {addr} conectado!")
+                    print(f"Server {addr} connected!")
                     thread = threading.Thread(target=self.initialServerConnection, args=(conn, addr))
                     thread.start()
             finally:
@@ -132,7 +128,7 @@ class RPGUI:
                 stream = Stream(videoname,(addr[0],NodeData.getPortaServer(self.node)))
                 self.streamList[stream.name] = stream
             
-            print(f'Videos disponíveis: {lista_de_videos}')
+            print(f'Stream list updated with: {lista_de_videos}')
         except Exception as e:
             print(f"Erro no processamento do servidor {addr[0]}: {e}")
         
@@ -144,11 +140,8 @@ class RPGUI:
             try:
                 socketForStream.bind(my_address)
                 print("RP waiting for Stream connections: ", my_address)
-                i = 0
                 while True:
                     data, _ = socketForStream.recvfrom(Packet_size)
-                    #print("Frame: ", i)
-                    i+=1
                     
                     # Parse the packet using your Packet class
                     received_packet = Packet("", "")
@@ -159,63 +152,4 @@ class RPGUI:
             except Exception as e:
                 print(f"Error in streamConnection: {e}")
             finally:
-                socketForStream.close()
-    
-    '''
-    def streamConnection(self):
-        my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node)) 
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
-            try:
-                socketForStream.bind(my_address)
-                print("RP à espera de conexões de Streams: ", my_address)
-                i=0
-                while True:
-                    #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
-                    allpacket_size, _ = socketForStream.recvfrom(4)
-                    print("Frame: ", i)
-                    packet_size = int.from_bytes(allpacket_size, byteorder='big')
-                    
-                    # Recebe o pacote do servidor
-                    pacote_data = b""
-                    pacote_data += allpacket_size
-                    data, _ = socketForStream.recvfrom(packet_size)
-                    pck = Packet("", "")
-                    pck.parsePacket(data)
-                    print(pck.frame_data)
-                    pacote_data += data
-                    
-                    
-                    pacote = Packet()
-                    Packet.parsePacket(pacote, pacote_data)
-                    print(Packet.getFrameData(pacote).decode('utf-8'))
-
-                    stream_track = ""
-                    for stream in self.streamList:
-                        if Stream.getName(stream) == Packet.getName(pacote):
-                            stream_track = Stream.getCaminhoDaStream(stream)
-                    
-                    # descubrir quais os nodos para onde tem de enviar
-                    nodesToSend = []
-                    nodesToSend.append('127.0.0.3')
-                    
-                    # contruir o pacote com o resto do caminho
-                    tracked_packet = TrackedPacket(stream_track, Packet.getFrameData(pacote))
-                    msgToSend = TrackedPacket.buildTrackedPacket(tracked_packet)
-                    
-                    # Enviar para todos os nós que estão na lista de envio
-                    for node in nodesToSend:
-                        send_address = (node, 22222)
-                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
-                            try:
-                                stream_socket.sendto(pacote_data, send_address)
-                            except Exception as e:
-                                print(f"Erro a enviar a Stream a partir do RP: {e}")
-                            finally:
-                                stream_socket.close()
-                    i+=1
-
-            except Exception as e:
-                print(f"Erro no processamento da Stream no RP: {e}")
-            finally:
-                socketForStream.close()
-        '''
+                socketForStream.close()                

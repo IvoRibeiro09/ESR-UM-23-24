@@ -15,7 +15,6 @@ class NodeGUI:
         self.start()
 
     def start(self):
-        print("Starting...")
         # ter uma janela que ao ligar tem as opçoes testar conexao e espera o clique para cemçar a testar
         # iniciar a thread que receve conexoes que so ira ser fechada quando clicar em close
         # iniciar o connection test qunado clicar no botao start teste connection
@@ -31,7 +30,6 @@ class NodeGUI:
     def connectionTest(self):
         self.janela = tk.Tk()
         self.janela.title(f'Node: {NodeData.getIp(self.node)}')
-        print("Show interface1...")
        
         spacing = 10
         #tela com nome
@@ -66,16 +64,15 @@ class NodeGUI:
         #quando recebe verifica se o seu nome nao esta presente 
         # se estiver nao faz nada
         # se nao estiver mete o seu ip na mesnagem e envia aos seus visinhos
-        print("Recieving...")
         socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
-
+        print(f"{NodeData.getIp(self.node)} waiting for Node connections")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind(socket_address)
             server_socket.listen()
             while True:
                 try:
                     client_connection, _ = server_socket.accept()
-                    client_connection.settimeout(60)  # Defina o timeout para o recebimento de dados
+                    #client_connection.settimeout(60)  # Defina o timeout para o recebimento de dados
 
                     size = client_connection.recv(4)
                     msg_size = int.from_bytes(size, byteorder='big')
@@ -90,9 +87,6 @@ class NodeGUI:
                         mensagem = mensagem + " <- " + NodeData.getIp(self.node) + " | " + NodeData.getIp(self.node)
                         self.sendMessageToAdjacentNodes(mensagem)
 
-                except socket.timeout:
-                    print(f"Nenhum cliente conectou-se ao Node {NodeData.getIp(self.node)} dentro do tempo limite. Parando a receção de conexões.")
-                    break
                 except Exception as e:
                     print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
 
@@ -114,12 +108,6 @@ class NodeGUI:
                 # Certifique-se de que a conexão seja fechada mesmo em caso de exceção
                 s.close()
 
-    def connectionVerify(self):
-        time.sleep(30)
-        msg = NodeData.getIp(self.node)
-        self.sendMessageToAdjacentNodes(msg)
-        print("Connection test done!")
-
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
     def streamConnection(self):
@@ -127,7 +115,7 @@ class NodeGUI:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
             try:
                 socketForStream.bind(my_address)
-                print(f"{my_address} à espera de conexões de Streams: ")
+                print(f"{my_address} waiting for Streams")
                 while True:
                     #parse packet
                     data, _ = socketForStream.recvfrom(Packet_size)
@@ -150,33 +138,6 @@ class NodeGUI:
                             print(f"Error sending stream from Node{NodeData.getIp(self.node)}: {e}")
                         finally:
                             stream_socket.close()                   
-                    '''
-                    #fazer o pacote trackeado
-                    pck = TrackedPacket(self.caminhoDaStream, pacote)
-                    dataToSend = pck.buildTrackedPacket()
-                    #e enviar para todos os clientes
-                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
-                        try:
-                            for nei in self.NeighbourToSend:
-                                send_address = (nei, Node_Port)
-                                stream_socket.sendto(dataToSend, send_address)
-                        except Exception as e:
-                            print(f"Error sending stream from RP: {e}")
-                    
-                    my_address = (NodeData.getIp(self.node), 0)
-                    for node in NodeData.getNeighboursAddress(self.node):
-                        if node != '127.0.0.1':
-                            send_address = (node, 22222)
-                            print("Send to: ", send_address)
-                            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
-                                try:
-                                    stream_socket.bind(my_address)
-                                    stream_socket.sendto(data, send_address)
-                                except Exception as e:
-                                    print(f"Erro na Stream a partir do {NodeData.getIp(self.node)}: {e}")
-                                finally:
-                                    stream_socket.close()
-                    '''
             except Exception as e:
                 print(f"Erro no streaming no Nó {NodeData.getIp(self.node)}: {e}")
             finally:

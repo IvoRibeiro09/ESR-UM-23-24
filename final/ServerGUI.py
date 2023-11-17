@@ -24,9 +24,9 @@ class ServerGUI:
         self.serverStarter()
 
     def serverStarter(self):
-        print("Starter...")
         self.conectToRP()
         self.receberPedidos()
+        self.janela.mainloop()
         
     def conectToRP(self):
         server_address = (NodeData.getIp(self.node),0)
@@ -35,7 +35,6 @@ class ServerGUI:
             try:
                 rp_socket.bind(server_address)
                 rp_socket.connect(rp_address)
-                print("Servidor conectado ao RP")
         
                 # enviar os videos que você tem para exibir
                 msg = ""
@@ -45,31 +44,30 @@ class ServerGUI:
                 msg = msg[:-5] 
                 data = msg.encode('utf-8')
                 rp_socket.sendall(data)
-                print(msg)
-                print("RP informado dos vídeos que o servidor tem disponíveis...")
+
+                print("Server conected to RP")
             except Exception as e:
                 print(f"Erro ao conectar ou enviar mensagens: {e}")
             finally:
                 rp_socket.close()
 
     def receberPedidos(self):
-        print("Server à espera de pedidos de Stream do RP")
+        print("Server waiting Stream requests")
         socket_address = (NodeData.getIp(self.node), 12346)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             try:
                 server_socket.bind(socket_address)
-                server_socket.listen(1)
+                server_socket.listen()
                 while True:
                     conn, addr = server_socket.accept()
                     data = conn.recv(1024)
-                    if not data:
-                        break
+                    if not data:break
                     mensagem = data.decode('utf-8')
                     if "Stream- " in mensagem:
                         self.streaming_streams.append(extrair_texto(mensagem))
                         thread = threading.Thread(target=self.sendStream)
                         thread.start()
-                        self.janela.mainloop()
+                        
                     conn.close()
             except Exception as e:
                 print(f"Erro ao receber mensagens do RP: {e}")
@@ -78,7 +76,7 @@ class ServerGUI:
 
     def sendStream(self):
         streamName = self.streaming_streams.pop()
-        print(f"Vou streamar o video: {streamName}")
+        print(f"Streaming: {streamName}")
         streampath = None
         for video in NodeData.getStreamList(self.node):
             if video[0] == streamName:
@@ -92,13 +90,12 @@ class ServerGUI:
                     fps =  sstream.get(cv2.CAP_PROP_FPS)
                     frame_interval = 1.0 / fps
                     st = time.time()
-                    i = 0
+                    i=0
                     while sstream.isOpened():
-                        print("Frame: ",i)
                         ret, frame = sstream.read()
                         if not ret:break
                         
-                        text = f"Server Frame: {i}"
+                        text = f"Server Frame: {i} of {streamName}"
                         pacote = Packet(streamName, text)
                         pacote_data = pacote.buildPacket()
                         stream_socket.sendto(pacote_data, rp_address)
@@ -110,6 +107,7 @@ class ServerGUI:
                         time.sleep(max(0, frame_interval - elapsed_time))
 
                         st = time.time()
+                        i+=1
                         '''
                         # Converte os dados do frame em uma imagem
                         img = ImageTk.PhotoImage(data=Packet.getFrameData(pacote))
@@ -119,8 +117,7 @@ class ServerGUI:
                         self.label.image = img
                         self.janela.update()
                         '''
-                        i+=1
-                    print('Player closed')
+                    print(f"{streamName} closed!")
                 except Exception as e:
                     print(f"Erro ao Streamar para o RP: {e}")
                 finally:

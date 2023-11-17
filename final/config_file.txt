@@ -108,9 +108,9 @@ nodePort- 11111
 streamPort- 22222
 neighbour- 127.0.0.1
 rp- 127.0.0.1 - 12346
-stream- ../VIDEO/video.mp4
-stream- ../VIDEO/videoA.mp4
-stream- ../VIDEO/videoB.mp4
+stream- ../VIDEO/Central_Cee.mp4
+stream- ../VIDEO/Matue.mp4
+stream- ../VIDEO/Slow_J.mp4
 ------
 ip- 127.0.0.3
 type- Node
@@ -140,3 +140,9 @@ streamPort- 22222
 neighbour- 127.0.0.4
 rp- 127.0.0.1 - 12345
 ------
+ip- 127.0.0.7
+type- Client
+nodePort- 11111
+streamPort- 22222
+neighbour- 127.0.0.4
+rp- 127.0.0.1 - 12345

@@ -15,9 +15,7 @@ class Stream():
     
     def getStatus(self):
         return str(self.status)
-    
 
-    
     def addClient(self, ip_cliente, caminhosdoRP):
         print(f"Client {ip_cliente} connectado à Stream {self.name}")
         if self.status == "Closed":
@@ -48,21 +46,19 @@ class Stream():
                 print(f"Erro na adição do primeiro cliente à stream: {e}")
         elif self.status == "Streaming":
             try:
-                print("A stream já está a ser transmitida")
                 # escolher o caminho mais rapido para o cliente em questao
                 caminho = ""
                 for cam in caminhosdoRP:
                     if ip_cliente in cam:
                         caminho = cam
                 # verificar se o caminho pode ser commun e se poder alterar o caminho de envio
-                print("lista node track antes do merge", self.Node_Track)
-                track_to_change = possibelToMerge(caminho, self.Node_Track)
-                if track_to_change:
-                    new_track = mergeCaminhos(caminho, track_to_change)
-                    self.Node_Track.append(new_track)
+                posição = possibelToMerge(caminho, self.Node_Track)
+                if posição:
+                    new = extrair_conexoes(caminho)
+                    new_track = mergeCaminhos(new, self.Node_Track[posição])
+                    self.Node_Track[posição] = new_track
                 else:
                     extrair_conexoes(self.Node_Track, caminho)
-                print("lista node track depois do merge", self.Node_Track)
             except Exception as e:
                 print(f"Erro na adição do cliente a stream ja aberta: {e}")
 
@@ -76,7 +72,7 @@ class Stream():
                         pck = TrackedPacket(nei[1], pacote)
                         dataToSend = pck.buildTrackedPacket()
                         send_address = (nei[0], Node_Port)
-                        #print("RP send to: ", send_address)
+                        
                         stream_socket.sendto(dataToSend, send_address)
                 except Exception as e:
                     print(f"Error sending stream from RP: {e}")
