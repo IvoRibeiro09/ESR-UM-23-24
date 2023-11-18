@@ -7,6 +7,7 @@ class Stream():
         self.name = name
         self.server_address = server
         self.status = "Closed" # "Pending" "Streaming"
+        self.stream_track = None
         self.Node_Track = []
            
     # getters
@@ -22,12 +23,11 @@ class Stream():
             try:
                 self.status = "Pending"
                 # escolher o caminho mais rapido
-                caminho = ""
                 for cam in caminhosdoRP:
                     if ip_cliente in cam:
-                        caminho = cam
+                        self.stream_track = cam
                 # defenir qual o neighbour por onde enviar
-                extrair_conexoes(self.Node_Track, caminho)
+                extrair_conexoes(self.Node_Track, self.stream_track)
                 
                 # notify server to start stream tpc 
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
@@ -52,25 +52,25 @@ class Stream():
                     if ip_cliente in cam:
                         caminho = cam
                 # verificar se o caminho pode ser commun e se poder alterar o caminho de envio
-                posição = possibelToMerge(caminho, self.Node_Track)
-                if posição:
-                    new = extrair_conexoes(caminho)
-                    new_track = mergeCaminhos(new, self.Node_Track[posição])
-                    self.Node_Track[posição] = new_track
+                possibel = possibelToMerge(caminho, self.stream_track)
+                if possibel == True:
+                    self.stream_track = combinar_caminhos(self.stream_track, caminho)
+                    self.Node_Track = []
+                    extrair_conexoes(self.Node_Track, self.stream_track)
                 else:
                     extrair_conexoes(self.Node_Track, caminho)
             except Exception as e:
                 print(f"Erro na adição do cliente a stream ja aberta: {e}")
 
-    def sendStream(self, pacote):
+    def sendStream(self, frameNumber, frame):
         try:
             #e enviar para todos os clientes
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                 try:
                     for nei in self.Node_Track:
                         #fazer o pacote trackeado
-                        pck = TrackedPacket(nei[1], pacote)
-                        dataToSend = pck.buildTrackedPacket()
+                        pck = Packet(nei[1], frameNumber, frame)
+                        dataToSend = pck.buildPacket()
                         send_address = (nei[0], Node_Port)
                         
                         stream_socket.sendto(dataToSend, send_address)

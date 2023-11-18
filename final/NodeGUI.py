@@ -120,18 +120,18 @@ class NodeGUI:
                     #parse packet
                     data, _ = socketForStream.recvfrom(Packet_size)
                     
-                    pck = TrackedPacket("", "")
-                    pck.parseTrackedPacket(data)
+                    pck = Packet("","", "")
+                    pck.parsePacket(data)
                     caminhos = []
-                    extrair_conexoes(caminhos, pck.track_data)
+                    extrair_conexoes(caminhos, pck.info)
                     
                     #e enviar para todos os clientes
                     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                         try:
                             for nei in caminhos:
                                 print("caminhos: ", nei)
-                                pckToSend = TrackedPacket(nei[1], pck.frame_data)
-                                dataToSend = pckToSend.buildTrackedPacket()
+                                pckToSend = Packet(nei[1],pck.frameNumber, pck.frame)
+                                dataToSend = pckToSend.buildPacket()
                                 send_address = (nei[0], Node_Port)
                                 stream_socket.sendto(dataToSend, send_address)
                         except Exception as e:

@@ -48,54 +48,39 @@ def invert_ip_addresses(address_string):
     inverted_address = f"{addresses[1].strip()} -> {addresses[0].strip()}"
 
     return inverted_address
-
 def extrair_conexoes(lista, input_string):
     #lista de tuplos (endereço para enviar, caminho a partir daí)
     try:
         if "|" in input_string:
-            parts = input_string.split(' | ')
-            primeiro_conjunto = parts[0]
-            fst = primeiro_conjunto.split(" -> ")
-            ips = [fst[1]]
-            novas_parts = []
-
-            for p in parts[1:]:
-                if fst[0] in p:
-                    ips.append(p.split(" -> ")[1])
-                else:
-                    novas_parts.append(p)
-
-            resto = ' | '.join(novas_parts)
-            for i in ips:
-                if i in resto:
-                    lista.append((i, resto))
-                else: 
-                    lista.append((i, ""))
+            partes = input_string.split(' | ',1)
+            conexao = partes[0].split(" -> ")
+            if "," in conexao[1]:
+                ips = conexao[1].split(",")
+                for i in ips:
+                    if i in partes[1]:
+                        lista.append((i, partes[1]))
+            else:
+                if conexao[1] in  partes[1]:
+                    lista.append((conexao[1], partes[1]))
         else:
-            fst = input_string.split(" -> ")
-            lista.append((fst[1], ""))
+            conexao = input_string.split(" -> ")
+            if "," in conexao[1]:
+                ips = conexao[1].split(",")
+                for i in ips:
+                    lista.append((i,""))
+            else:
+                lista.append((conexao[1],""))
     except Exception as e:
         print("Erro ao criar a lista de tuplos",e)
     
-def possibelToMerge(caminho, Node_Track):
+def possibelToMerge(caminho, caminho2):
     pares_str1 = extrair_pares(caminho)
-    count=0
-    for i in Node_Track:
-        pares_str2 = extrair_pares(i[1])
-        for par1 in pares_str1:
-            for par2 in pares_str2:
-                if par1 == par2:
-                    return count
-        count+=1
-    return None  
-    
-def mergeCaminhos(caminho, Node_Track):
-    pares_str1 = extrair_pares(caminho[1])
-    pares_str2 = extrair_pares(Node_Track[1])
-    novos_pares = [par2 for par2 in pares_str2 if par2 not in pares_str1]
-    pares_combinados = pares_str1 + novos_pares
-    resto = ' | '.join([f"{par[0]} -> {par[1]}" for par in pares_combinados])
-    return (Node_Track[0], resto)
+    pares_str2 = extrair_pares(caminho2)
+    for par1 in pares_str1:
+        for par2 in pares_str2:
+            if par1 == par2:
+                return True
+    return False  
 
 def extrair_pares(input_string):
         if "|" in input_string:
@@ -103,3 +88,26 @@ def extrair_pares(input_string):
             return [tuple(part.split(" -> ")) for part in parts]
         else:
             return [tuple(input_string.split(" -> "))]
+
+def combinar_caminhos(caminho1, caminho2):
+    pares_str1 = extrair_pares(caminho1)
+    pares_str2 = extrair_pares(caminho2)
+    conexoes_dict = {}
+    for par in pares_str1:
+        if par[0] not in conexoes_dict:
+            conexoes_dict[par[0]] = par[1]
+        if par[1] not in conexoes_dict[par[0]]:
+            aux = conexoes_dict[par[0]]
+            conexoes_dict[par[0]] = aux + "," + par[1] 
+
+    for par in pares_str2:
+        if par[0] not in conexoes_dict:
+            conexoes_dict[par[0]] = par[1]
+        if par[1] not in conexoes_dict[par[0]]:
+            aux = conexoes_dict[par[0]]
+            conexoes_dict[par[0]] = aux + "," + par[1] 
+
+    partes = []
+    for inicio, fins in conexoes_dict.items():
+        partes.append(f"{inicio} -> {fins}")
+    return ' | '.join(partes)

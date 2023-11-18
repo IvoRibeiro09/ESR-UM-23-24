@@ -9,17 +9,16 @@ class ClienteGUI:
 
     def __init__(self, node):
         self.node = node
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.streansNoRP = None
+        self.rp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.condition = threading.Condition()
         self.conditionBool = False
         self.status = "Playing"
-        self.clientClose = True
+        self.packetQueue = []
         self.clientStart()
         
     def clientStart(self):
         try:
-            print("Starter...")
             self.inicialConnection()
             self.askStreamTransmission()
             thread = threading.Thread(target=self.streamTransmission())
@@ -32,14 +31,15 @@ class ClienteGUI:
         #conectar ao servidor 
         rp_address = NodeData.getRPAddress(self.node)
         cliente_address = (NodeData.getIp(self.node), 0)
-        self.server_socket.bind(cliente_address)
-        self.server_socket.connect(rp_address)
-        #pedir os videos que ele tem 
         try:
+            self.rp_socket.bind(cliente_address)
+            self.rp_socket.connect(rp_address)
+    
+            #pedir os videos que ele tem 
             message = "VideoList"
-            self.server_socket.sendall((message).encode())
+            self.rp_socket.sendall((message).encode())
             #receber a lista de video do rp
-            data = self.server_socket.recv(1024)
+            data = self.rp_socket.recv(1024)
             mensagem = data.decode()
             vids = mensagem.split("/")
             vids.pop()
@@ -59,7 +59,7 @@ class ClienteGUI:
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.janela.geometry("+1000+50")
-        print("Show interface1...")
+        
         i = 0
         spacing = 10
         for stream in self.streansNoRP:
@@ -78,12 +78,15 @@ class ClienteGUI:
 
     def selectStream(self, video):
         print(f"{video} has been selected...")
-        mensagem = f"Stream- {video}"
-        self.server_socket.sendall((mensagem).encode())
-        with self.condition:
-            self.conditionBool = True
-            self.condition.notify()
-        self.janela.destroy()
+        try:
+            mensagem = f"Stream- {video}"
+            self.rp_socket.sendall((mensagem).encode())
+            with self.condition:
+                self.conditionBool = True
+                self.condition.notify()
+        finally:
+            self.janela.destroy()
+            self.rp_socket.close()
     
     def waitselction(self):
         with self.condition:
@@ -92,7 +95,6 @@ class ClienteGUI:
     
     def streamTransmission(self):
         print("Cliente aguarda video...")
-        '''
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.janela.geometry("+1000+50")
@@ -113,7 +115,6 @@ class ClienteGUI:
         self.botaoClose["text"] = "Close"
         self.botaoClose["command"] =  self.closeStream
         self.botaoClose.grid(row=1, column=1, padx=10, pady=10)
-        '''
         # recebe o video em bytes do cliente
         i = 0
         my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
@@ -121,28 +122,37 @@ class ClienteGUI:
             try:
                 socketForStream.bind(my_address)
                 print(f"{my_address} à espera de conexões de Streams: ")
-                i=0
-                while True:
+                while not self.status == "Closed":
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
                     data, _ = socketForStream.recvfrom(Packet_size)
-                    print("Frame: ", i)
-
-                    pacote = Packet("", "")
+                    pacote = Packet("", "", "")
                     Packet.parsePacket(pacote, data)
-                    print("msg no pacote: ",Packet.getFrameData(pacote))
-                    '''
+                    print("Frame: ", pacote.frameNumber)
+                    if self.status == "Playing": self.packetQueue.append(pacote)
+
+                    data1, _ = socketForStream.recvfrom(Packet_size)
+                    pacote1 = Packet("", "", "")
+                    Packet.parsePacket(pacote1, data1)
+                    print("Frame: ", pacote1.frameNumber)
+                    if self.status == "Playing": self.packetQueue.append(pacote1)
+
+                    data2, _ = socketForStream.recvfrom(Packet_size)
+                    pacote2 = Packet("", "", "")
+                    Packet.parsePacket(pacote2, data2)
+                    print("Frame: ", pacote2.frameNumber)
+                    if self.status == "Playing": self.packetQueue.append(pacote2)
+                    #print("msg no pacote: ",Packet.getFrameData(pacote))
+
                     if self.status == "Playing":
-                        # Converte os dados do frame em uma imagem
-                        img = ImageTk.PhotoImage(data= Packet.getFrameData(pacote))
+                        frame = self.verifyFrame()
+                        if frame:
+                            # Converte os dados do frame em uma imagem
+                            img = ImageTk.PhotoImage(data= frame)
 
-                        # Atualiza a label na janela Tkinter com a nova imagem
-                        self.label.configure(image=img)
-                        self.label.image = img
-                        #self.janela.update()
+                            # Atualiza a label na janela Tkinter com a nova imagem
+                            self.label.configure(image=img)
+                            self.label.image = img   
                     self.janela.update()
-                    '''
-                    i+=1
-
             except Exception as e:
                 print(f"Erro ao receber vídeo: {e}")
             finally:
@@ -160,43 +170,25 @@ class ClienteGUI:
 
     def closeStream(self):
         print("Closing Stream...")
-        self.server_socket.close()
+        self.status = "Closed"
         self.janela.destroy()
     
-    def clinetNewStart(self):
-        self.janela = tk.Tk()
-        self.janela.title(f"Cliente {self.IP}")
-        spacing = 10
-        #tela
-        self.label = tk.Label(self.janela, width=60, padx=spacing, pady=spacing)
-        self.label["text"] = "Transmission has ended!!!\nWant to continue watching a new Stream..."
-        self.label.grid(row=0, column=0, padx=spacing, pady=spacing, columnspan=2)
-
-        # Botao streamar e enviar a stream de video para o cliente		
-        self.botaoStart = tk.Button(self.janela, width=30, padx=spacing, pady=spacing)
-        self.botaoStart["text"] = "Yes"
-        self.botaoStart["command"] = self.yesbutton
-        self.botaoStart.grid(row=1, column=0, padx=spacing, pady=spacing)
-	
-        self.botaoStart = tk.Button(self.janela, width=30, padx=spacing, pady=spacing)
-        self.botaoStart["text"] = "No"
-        self.botaoStart["command"] = self.nobutton
-        self.botaoStart.grid(row=1, column=1, padx=spacing, pady=spacing)
-        self.janela.mainloop()
-
-    def yesbutton(self):
-        global OnOff
-        OnOff = True
-        self.conditionBool = True
-        with self.condition:
-            self.condition.notify()
-        self.janela.destroy()
-
-    def nobutton(self):
-        global OnOff
-        OnOff = False
-        self.conditionBool = True
-        with self.condition:
-            self.condition.notify()
-        self.janela.destroy()
-    
+    def verifyFrame(self):
+        # verificar se os 3 elementos da lista sao do mesmo pacote
+        pack1 = self.packetQueue[0]
+        pack2 = self.packetQueue[1]
+        pack3 = self.packetQueue[2]
+        if Packet.getFrameNumber(pack1) == Packet.getFrameNumber(pack2) == Packet.getFrameNumber(pack3):
+            self.packetQueue.pop(0)
+            self.packetQueue.pop(0)
+            self.packetQueue.pop(0)
+            return Packet.getFrame(pack1) + Packet.getFrame(pack2) + Packet.getFrame(pack3)
+        else:
+            # se sim juntar e passar para imagem
+            # caso contrario dar pop no primeiro pacote e se o len da queue for maior que tres verificar outra vez se sao o mesmo pacote
+            print("nao coincide")
+            self.packetQueue.pop(0)
+            if len(self.packetQueue) >= 3:
+                return self.verifyFrame()
+            else:            
+                return None
