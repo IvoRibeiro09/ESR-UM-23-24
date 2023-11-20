@@ -10,7 +10,8 @@ class ClienteGUI:
     def __init__(self, node):
         self.node = node
         self.streansNoRP = None
-        self.rp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.rp_socket = None
+        self.my_address = (NodeData.getIp(self.node), 0)
         self.condition = threading.Condition()
         self.conditionBool = False
         self.status = "Playing"
@@ -29,11 +30,10 @@ class ClienteGUI:
             
     def inicialConnection(self):
         #conectar ao servidor 
-        rp_address = NodeData.getRPAddress(self.node)
-        cliente_address = (NodeData.getIp(self.node), 0)
         try:
-            self.rp_socket.bind(cliente_address)
-            self.rp_socket.connect(rp_address)
+            self.rp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.rp_socket.bind(self.my_address)
+            self.rp_socket.connect(NodeData.getRPAddress(self.node))
     
             #pedir os videos que ele tem 
             message = "VideoList"
@@ -170,8 +170,24 @@ class ClienteGUI:
 
     def closeStream(self):
         print("Closing Stream...")
-        self.status = "Closed"
-        self.janela.destroy()
+        try:
+            self.rp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.rp_socket.bind(self.my_address)
+            self.rp_socket.connect(NodeData.getRPAddress(self.node))
+            #pedir os videos que ele tem 
+            message = "Connection closed"
+            self.rp_socket.sendall((message).encode())
+            # o cliente avisa o rp que fechou a conexao
+            
+            print('The Client informed the RP that he no longer intends to receive the stream.')
+        except Exception as e:
+            print(f"Erro ao enviar mensagem de fechar a Stream para o servidor: {e}")
+        finally:
+            self.rp_socket.close()
+            self.status = "Closed"
+            self.janela.destroy()
+        
+
     
     def verifyFrame(self):
         # verificar se os 3 elementos da lista sao do mesmo pacote

@@ -78,3 +78,16 @@ class Stream():
                     print(f"Error sending stream from RP: {e}")
         except Exception as e:
             print(f"Error creating and sending the packet from RP: {e}")
+
+    def rmvStream(self, client_ip):
+        try:
+            for track in self.Node_Track:
+                if client_ip in track:
+                    new_track = splitTracks(track, client_ip)
+                    if new_track:
+                        self.Node_Track.append(new_track)
+                    self.Node_Track.remove(track)
+                    break
+        
+        except Exception as e:
+            print("Erro ao remover o caminho para o cliente que deu dsiconnect: ", e)

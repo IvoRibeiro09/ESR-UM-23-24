@@ -9,6 +9,7 @@ class RPGUI:
 
     def __init__(self, node):
         self.node = node
+        self.clients_logged = {}
         self.streamList = {}
         self.caminhos = []
         self.startRP()
@@ -92,7 +93,16 @@ class RPGUI:
                     print(f"Client {addr[0]} ask for stream: {selectedStream}")
 
                     stream = self.streamList[selectedStream]
+                    self.clients_logged[addr[0]] = selectedStream
                     Stream.addClient(stream, addr[0], self.caminhos)
+
+            elif mensagem == "Connection closed":
+                stream_do_cliente = self.clients_logged[addr[0]]
+                stream = self.streamList[stream_do_cliente]
+                Stream.rmvClient(stream, addr[0])
+                # avisar o Server para parar de stremar
+                print(f"Client {addr[0]} disconnected.")
+
         except Exception as e:
             print(f"Erro no processamento do cliente {addr[0]}: {e}")
         finally:

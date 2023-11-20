@@ -106,3 +106,5 @@ caminho = lista.pop()
 lista = []
 extrair_conexoes(lista, caminho[1])
 print(lista)
+
+
