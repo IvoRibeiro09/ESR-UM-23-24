@@ -66,7 +66,6 @@ class RPGUI:
             try:
                 while True:
                     conn, addr = socketForClient.accept()
-                    print(f"Client {addr} connected!")
                     thread = threading.Thread(target=self.initialClientConn, args=(conn, addr))
                     thread.start()
             finally:
@@ -77,6 +76,7 @@ class RPGUI:
             mensagem = conn.recv(1024).decode()
 
             if mensagem == "VideoList":
+                print(f"Client {addr} connected!")
                 # Envie a lista de vídeos de volta ao cliente
                 if not self.streamList:
                     noVidmsg = "I DONT HAVE STREAMS"
@@ -102,6 +102,17 @@ class RPGUI:
                 stream = self.streamList[stream_do_cliente]
                 Stream.rmvClient(stream, addr[0])
                 # avisar o Server para parar de stremar
+                if Stream.getStatus(stream) == "Closed":
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_server:
+                        socket_server.bind((NodeData.getIp(self.node),0))
+                        socket_server.connect((Stream.getServerAddress(self.node)[0],NodeData.getPortaServer(self.node)))
+
+                        mensagem = f"Stop Stream- {stream_do_cliente}"
+                        socket_server.send(mensagem.encode('utf-8'))
+                        
+                        socket_server.close()
+                
+                del self.clients_logged[addr[0]]
                 print(f"Client {addr[0]} disconnected.")
 
         except Exception as e:

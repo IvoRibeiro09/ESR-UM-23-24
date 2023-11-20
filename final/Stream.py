@@ -16,6 +16,12 @@ class Stream():
     
     def getStatus(self):
         return str(self.status)
+    
+    def getServerAddress(self):
+        return self.server_address
+    
+    def getNodeTrack(self):
+        return self.Node_Track
 
     def addClient(self, ip_cliente, caminhosdoRP):
         print(f"Client {ip_cliente} connectado à Stream {self.name}")
@@ -82,10 +88,10 @@ class Stream():
     def rmvClient(self, client_ip):
         try:
             for track in self.Node_Track:
-                if client_ip in track:
-                    new_track = splitTracks(track, client_ip)
+                if client_ip in track[1]:
+                    new_track = splitTracks(track[1], client_ip)
                     if new_track:
-                        self.Node_Track.append(new_track)
+                        self.Node_Track.append((track[0], new_track))
                     self.Node_Track.remove(track)
                     break
         

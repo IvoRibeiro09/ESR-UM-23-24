@@ -67,6 +67,8 @@ class ServerGUI:
                         self.streaming_streams.append(extrair_texto(mensagem))
                         thread = threading.Thread(target=self.sendStream)
                         thread.start()
+                    else:
+                        print(mensagem)
                         
                     conn.close()
             except Exception as e:
