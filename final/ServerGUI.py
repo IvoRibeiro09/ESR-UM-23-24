@@ -58,7 +58,7 @@ class ServerGUI:
                         self.streamList[stream_name] = "Asked"
                         thread = threading.Thread(target=self.startStream)
                         thread.start()
-                    elif "Close Stream- " in mensagem:
+                    elif "Stop Stream- " in mensagem:
                         stream_to_close = extrair_texto(mensagem)
                         self.closeStream(stream_to_close)
                     else:

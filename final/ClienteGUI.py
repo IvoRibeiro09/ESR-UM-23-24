@@ -103,7 +103,6 @@ class ClienteGUI:
         self.label = tk.Label(self.janela, width=640, height=480, bg='white')
         self.label.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
 
-
         # Butao pausa de enviar a stream de video para o cliente				
         self.botaoPause = tk.Button(self.janela, width=20, padx=3, pady=3)
         self.botaoPause["text"] = "Pause"
@@ -122,7 +121,7 @@ class ClienteGUI:
             try:
                 socketForStream.bind(my_address)
                 print(f"{my_address} à espera de conexões de Streams: ")
-                while not self.status == "Closed":
+                while self.status != "Closed":
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
                     data, _ = socketForStream.recvfrom(Packet_size)
                     pacote = Packet("", "", "")
@@ -187,8 +186,6 @@ class ClienteGUI:
             self.status = "Closed"
             self.janela.destroy()
         
-
-    
     def verifyFrame(self):
         # verificar se os 3 elementos da lista sao do mesmo pacote
         pack1 = self.packetQueue[0]
