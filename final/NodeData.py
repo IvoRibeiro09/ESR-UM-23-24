@@ -11,7 +11,7 @@ class NodeData:
         self.RP_address = None
         self.PORTACLIENT = None
         self.PORTASERVER = None
-        self.stream_list = []
+        self.stream_list = {}
         self.parse_file(file)
         
     # Getters
@@ -40,7 +40,7 @@ class NodeData:
         return int(self.PORTASERVER)
     
     def getStreamList(self):
-        return list(self.stream_list)
+        return self.stream_list
             
     # Setters
     def setIp(self, ip):
@@ -68,7 +68,7 @@ class NodeData:
         self.PORTASERVER = pserver
 
     def setStreamList(self, stream):
-        self.stream_list.append((getVideoName(stream), stream))
+        self.stream_list[getVideoName(stream)] = stream
 
     # Function to parse the config file
     def parse_file(self, filepath):

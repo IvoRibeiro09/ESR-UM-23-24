@@ -131,7 +131,7 @@ class NodeGUI:
                     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                         try:
                             for nei in caminhos:
-                                print(f"caminhos: {nei} pacote nª: {i}")
+                                print(f"caminhos: {nei} pacote nª: {pck.frameNumber}")
                                 pckToSend = Packet(nei[1],pck.frameNumber, pck.frame)
                                 dataToSend = pckToSend.buildPacket()
                                 send_address = (nei[0], Node_Port)

@@ -40,7 +40,7 @@ class Stream():
                     try:
                         server_socket.connect(self.server_address)
                 
-                        msg = f"Stream- {self.name}"
+                        msg = f"Start Stream- {self.name}"
                         data = msg.encode('utf-8')
                         server_socket.send(data)
                     except Exception as e:
@@ -93,6 +93,8 @@ class Stream():
                     if new_track:
                         self.Node_Track.append((track[0], new_track))
                     self.Node_Track.remove(track)
+                    if self.Node_Track == []:
+                        self.status = "Closed"
                     break
         
         except Exception as e:

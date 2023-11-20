@@ -103,9 +103,12 @@ class RPGUI:
                 Stream.rmvClient(stream, addr[0])
                 # avisar o Server para parar de stremar
                 if Stream.getStatus(stream) == "Closed":
+                    server_address = (Stream.getServerAddress(stream)[0], NodeData.getPortaServer(self.node))
+                    print(server_address)
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_server:
-                        socket_server.bind((NodeData.getIp(self.node),0))
-                        socket_server.connect((Stream.getServerAddress(self.node)[0],NodeData.getPortaServer(self.node)))
+                        #socket_server.bind((NodeData.getIp(self.node),0))
+
+                        socket_server.connect((Stream.getServerAddress(stream)[0],NodeData.getPortaServer(self.node)))
 
                         mensagem = f"Stop Stream- {stream_do_cliente}"
                         socket_server.send(mensagem.encode('utf-8'))
