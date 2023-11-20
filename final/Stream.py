@@ -79,7 +79,7 @@ class Stream():
         except Exception as e:
             print(f"Error creating and sending the packet from RP: {e}")
 
-    def rmvStream(self, client_ip):
+    def rmvClient(self, client_ip):
         try:
             for track in self.Node_Track:
                 if client_ip in track:

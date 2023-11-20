@@ -116,9 +116,11 @@ class NodeGUI:
             try:
                 socketForStream.bind(my_address)
                 print(f"{my_address} waiting for Streams")
+                i=0
                 while True:
                     #parse packet
                     data, _ = socketForStream.recvfrom(Packet_size)
+                    i+=1
                     
                     pck = Packet("","", "")
                     pck.parsePacket(data)
@@ -129,7 +131,7 @@ class NodeGUI:
                     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                         try:
                             for nei in caminhos:
-                                print("caminhos: ", nei)
+                                print(f"caminhos: {nei} pacote nª: {i}")
                                 pckToSend = Packet(nei[1],pck.frameNumber, pck.frame)
                                 dataToSend = pckToSend.buildPacket()
                                 send_address = (nei[0], Node_Port)

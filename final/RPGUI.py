@@ -94,6 +94,7 @@ class RPGUI:
 
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
+                    print(self.clients_logged)
                     Stream.addClient(stream, addr[0], self.caminhos)
 
             elif mensagem == "Connection closed":
