@@ -125,6 +125,7 @@ nodePort- 11111
 streamPort- 22222
 neighbour- 127.0.0.3
 neighbour- 127.0.0.5
+neighbour- 127.0.0.6
 ------
 ip- 127.0.0.5
 type- Client

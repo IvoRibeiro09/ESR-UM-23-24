@@ -9,9 +9,8 @@ class ClienteGUI:
 
     def __init__(self, node):
         self.node = node
-        self.streansNoRP = None
-        self.rp_socket = None
         self.my_address = (NodeData.getIp(self.node), 0)
+        self.selected = None
         self.condition = threading.Condition()
         self.conditionBool = False
         self.status = "Playing"
@@ -22,50 +21,51 @@ class ClienteGUI:
         try:
             while True:
                 self.inicialConnection()
-                self.askStreamTransmission()
-                thread = threading.Thread(target=self.streamTransmission)
-                thread.start()
-                thread.join()
+                self.streamTransmission()
         except Exception as e:
             print(e)
             
     def inicialConnection(self):
         #conectar ao servidor 
         try:
-            self.rp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.rp_socket.bind(self.my_address)
-            self.rp_socket.connect(NodeData.getRPAddress(self.node))
-    
-            #pedir os videos que ele tem 
-            message = "VideoList"
-            self.rp_socket.sendall((message).encode())
-            #receber a lista de video do rp
-            data = self.rp_socket.recv(1024)
-            mensagem = data.decode()
-            vids = mensagem.split("/")
-            vids.pop()
-            self.streansNoRP = vids
-            print("Pedido de quais videos exixtem no RP recebido")
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as rp_socket:
+                rp_socket.bind(self.my_address)
+                rp_socket.connect(NodeData.getRPAddress(self.node))
+        
+                #pedir os videos que ele tem 
+                message = "VideoList"
+                rp_socket.sendall((message).encode())
+                #receber a lista de video do rp
+                data = rp_socket.recv(1024)
+                mensagem = data.decode()
+                vids = mensagem.split("/")
+                vids.pop()
+                
+                self.askStreamTransmission(vids)
+                mensagem = f"Stream- {self.selected}"
+                rp_socket.sendall((mensagem).encode())
+                
+                print("Pedido de quais videos exixtem no RP recebido")
         except Exception as e:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
         finally:
-            se
+            rp_socket.close()
 
-    def askStreamTransmission(self):
-        self.clienteInterface()
+    def askStreamTransmission(self, streamList):
+        self.clienteInterface(streamList)
         with self.condition:
             while not self.conditionBool:
                 self.condition.wait()
         self.conditionBool = False
 
-    def clienteInterface(self):
+    def clienteInterface(self, streamList):
         self.janela = tk.Tk()
         self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.janela.geometry("+1000+50")
         
         i = 0
         spacing = 10
-        for stream in self.streansNoRP:
+        for stream in streamList:
             #tela com nome
             self.label = tk.Label(self.janela, width=60, padx=spacing, pady=spacing)
             self.label["text"] = f"{stream}"
@@ -81,13 +81,9 @@ class ClienteGUI:
 
     def selectStream(self, video):
         print(f"{video} has been selected...")
-        try:
-            mensagem = f"Stream- {video}"
-            self.rp_socket.sendall((mensagem).encode())
-        finally:
-            self.janela.destroy()
-            self.rp_socket.close()
+        self.janela.destroy()
         with self.condition:
+            self.selected = video
             self.conditionBool = True
             self.condition.notify()
     
@@ -155,6 +151,7 @@ class ClienteGUI:
         finally:
             socketForStream.close()
             self.janela.destroy()
+            self.status = "Playing"
             print("Closing Stream...")
 
     def pauseStream(self):
