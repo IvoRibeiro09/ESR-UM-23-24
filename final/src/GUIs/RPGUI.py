@@ -6,8 +6,10 @@ from src.Stream import *
 from src.NodeData import *
 from src.Packet import *
 
+'''
+Esta é a classe principal para o RendezvousPoint
+'''
 class RPGUI:
-
     def __init__(self, node):
         self.node = node
         self.clients_logged = {}
@@ -36,6 +38,11 @@ class RPGUI:
         thread.start()
         self.recieveNodeConnection()
 
+    # Metodo que cria uma interface grafica que permite ao RP construir a rede apos selecionar essa 
+    # opção indicada
+    # esta funcionalidade permite garantir que a rede so é estabelecida depois de todos os nodos estiverem ligados
+    # apos selecionada é enviada a mensagem de "Start Network" aos nodos vizinhos que iram fazer o mesmo para os seus
+    # vizinhos que depois iniciaram a construção da rede no sentido inverso
     def startNetwork(self):
         self.janela = tk.Tk()
         self.janela.title(f'RendezvousPoint: {NodeData.getIp(self.node)}')
@@ -80,6 +87,8 @@ class RPGUI:
             self.condition.notify()
         self.janela.destroy()
         
+    # Metodo responsavel por receber os caminhos provenientes de todos os nodos e inverte-os por virem 
+    # no sentido contrario e guarda essa informação construindo assim a rede overlay
     def recieveNodeConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
         try:
@@ -123,14 +132,17 @@ class RPGUI:
                     thread.start()
             finally:
                 socketForClient.close()
-   
+    
+    # Metodo que trata de receber as conexões de clientes e consuante a sua escolhade stream
+    # trata de os adicionar à Stream indicada 
+    # tambem quando um cliente decide deixar de assitir uma stream trata de o remover dessa stream
+    # e avisa ainda o servidor no caso de não exitir nenhum cliente a assistir 
     def initialClientConn(self, conn, addr):
         try:
             mensagem = conn.recv(1024).decode()
 
             if mensagem == "VideoList":
                 print(f"Client {addr} connected!")
-                # Envie a lista de vídeos de volta ao cliente
                 if not self.streamList:
                     noVidmsg = "I DONT HAVE STREAMS"
                     conn.sendall(noVidmsg.encode())
@@ -142,13 +154,11 @@ class RPGUI:
             
                     recv_msg = conn.recv(1024).decode()
                     selectedStream = extrair_texto(recv_msg)
-
-                    print(f"Client {addr[0]} ask for stream: {selectedStream}")
-
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
-                    print(self.clients_logged)
+                    
                     Stream.addClient(stream, addr[0], self.caminhos)
+                    print(f"Client {addr} added to Stream {selectedStream}")
 
             elif mensagem == "Connection closed":
                 stream_do_cliente = self.clients_logged[addr[0]]
@@ -159,8 +169,6 @@ class RPGUI:
                     server_address = (Stream.getServerAddress(stream)[0], NodeData.getPortaServer(self.node))
                     print(server_address)
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_server:
-                        #socket_server.bind((NodeData.getIp(self.node),0))
-
                         socket_server.connect((Stream.getServerAddress(stream)[0],NodeData.getPortaServer(self.node)))
 
                         mensagem = f"Stop Stream- {stream_do_cliente}"
@@ -192,16 +200,18 @@ class RPGUI:
                     thread.start()
             finally:
                 socketForServer.close()
-
+    
+    # Metodo que trata de receber conexões de servidores e as suas listas de streams
+    # para cada stream que o servidor é capaz de transmitir é criada uma estrutura stream
+    # com a informação do servidor que tem essa stream assim como o seu nome 
     def initialServerConnection(self, conn, addr):
         try:
-            # perguntar quais os videos que o servidor tem para transmitir
-            # receber mensagens com o nome dos videos
+            # receber mensagens com a lista das streams
             data = conn.recv(1024)
             mensagem = data.decode('utf-8')
-            # Processar e responder às mensagens recebidas aqui
             lista_de_videos = mensagem.split('-AND-')
             
+            # Cria uma Stream por transmissao de cada servidor
             for videoname in lista_de_videos:
                 stream = Stream(videoname,(addr[0],NodeData.getPortaServer(self.node)))
                 self.streamList[stream.name] = stream
@@ -212,6 +222,11 @@ class RPGUI:
         
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
+
+    # Metodo responsavel por lidar com as mensagens de transmissão de frame do servidor para os respetivos
+    # clientes seguindo o caminho previamente definido 
+    # recebe o pacote com o nome da stream e consuante esse nome refaz o pacote com o caminho a percorrer
+    # e envia para o respectivo nodo vizinho nesse caminho
     def streamConnection(self):
         my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
