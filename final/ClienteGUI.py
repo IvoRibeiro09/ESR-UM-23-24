@@ -6,7 +6,7 @@ from Packet import *
 from NodeData import *
 
 '''
-This is the main class for the Client
+Esta é a classe principal para o Cliente
 '''
 class ClienteGUI:
     def __init__(self, node):

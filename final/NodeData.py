@@ -1,7 +1,11 @@
 from auxiliarFunc import *
 
+'''
+Esta é a classe principal para a esrutura de dados usada para todas as interfaces do sistema
+Para cada componente na rede existe informação sobre ele no ficheiro de configuração que é 
+utilizada para a construção desta estrutura 
+'''
 class NodeData:
-
     def __init__(self, ip , file):
         self.IP = ip
         self.type = None
@@ -70,7 +74,7 @@ class NodeData:
     def setStreamList(self, stream):
         self.stream_list[getVideoName(stream)] = stream
 
-    # Function to parse the config file
+    # Metodo capaz de extrair do ficehiro de configuração a informação relacionada à estrutura em questão
     def parse_file(self, filepath):
         try:
             with open(filepath, 'r') as f:
@@ -102,7 +106,7 @@ class NodeData:
         except Exception as e:
             print(f"An error occurred during parsing: {str(e)}")
 
-    # Function to verify the info of the node
+    # Metodo de auxilio na visualização e precessão da estrutura
     def tostring(self):
         print("-----------------------------------------------")
         print("IP: " + self.IP)

@@ -1,29 +1,36 @@
 import os, re
 
+'''
+Metodos auxiliares que são usados pelas diferentes estruturas
+'''
+
+# Metodo que retorna o nome do video quando lhe é passado o caminho para o mesmo
 def getVideoName(video):
-    # nome do ficheiro sem o caminho
     nomeExtensao = os.path.basename(video)
-    video_sem_extensao, extensao = os.path.splitext(nomeExtensao)
+    video_sem_extensao, _ = os.path.splitext(nomeExtensao)
     return video_sem_extensao
 
+# Metodo que retorna um inteiro seguido de um " - "
 def extrair_numero(texto):
     padrao = r'[a-z]*-\s*(\d+)'
     correspondencia = re.search(padrao, texto)
     numero_porta = correspondencia.group(1)
     return int(numero_porta)
 
+# Metodo que retorna a string seguida de um " - "
 def extrair_texto(texto):
     padrao = r'[a-z_]*- ([\w.\/]+)'
     correspondencia = re.search(padrao, texto)
     return correspondencia.group(1)
 
+# Metodo que retorna um tuplo com uma string e um inteiro seguida de um " - " e separados por um " - "
 def extrair_texto_numero(texto):
     padrao = r'[a-z_]*- ([\w.\/]+)\s+-\s+(\d+)'
     correspondencia = re.search(padrao, texto)
     return (correspondencia.group(1), int(correspondencia.group(2)))
 
+# Metodo inverte uma conexão para ser usada na ordem certa pelo RP
 def inverter_relacoes(mensagens):
-    # Dividir as mensagens em uma lista usando o caractere '|' como delimitador
     if "|" in mensagens:
         relacoes = mensagens.split(' | ')
         mensagens_invertidas = ""
@@ -32,24 +39,18 @@ def inverter_relacoes(mensagens):
             conn = invert_ip_addresses(conn)
             mensagens_invertidas += conn + " | "
             
-        # Inverter a ordem das relações
         mensagens_invertidas = mensagens_invertidas[:-3] 
     else:
-        # Inverter a ordem das relações
         mensagens_invertidas = invert_ip_addresses(mensagens)
-
     return mensagens_invertidas
 
 def invert_ip_addresses(address_string):
-    # Separa os dois endereços usando '<-' como delimitador
     addresses = address_string.split('<-')
-
-    # Inverte a ordem dos endereços e os une com '->' como separador
     inverted_address = f"{addresses[1].strip()} -> {addresses[0].strip()}"
-
     return inverted_address
+
+# Metodo que permite criar e adicionar caminhos a enviar por uma stream
 def extrair_conexoes(lista, input_string):
-    #lista de tuplos (endereço para enviar, caminho a partir daí)
     try:
         if "|" in input_string:
             partes = input_string.split(' | ',1)
@@ -73,6 +74,7 @@ def extrair_conexoes(lista, input_string):
     except Exception as e:
         print("Erro ao criar a lista de tuplos",e)
     
+# Metodo que verifica se dois caminhos podem ser unficados 
 def possibelToMerge(caminho, caminho2):
     pares_str1 = extrair_pares(caminho)
     pares_str2 = extrair_pares(caminho2)
@@ -82,6 +84,7 @@ def possibelToMerge(caminho, caminho2):
                 return True
     return False  
 
+# Metodo auxiliar que separa as conexões em pares
 def extrair_pares(input_string):
         if "|" in input_string:
             parts = input_string.split(' | ')
@@ -89,6 +92,7 @@ def extrair_pares(input_string):
         else:
             return [tuple(input_string.split(" -> "))]
 
+# Metodo que combina os dois caminhos que podem ser unificados num só caminho
 def combinar_caminhos(caminho1, caminho2):
     pares_str1 = extrair_pares(caminho1)
     pares_str2 = extrair_pares(caminho2)
@@ -112,6 +116,7 @@ def combinar_caminhos(caminho1, caminho2):
         partes.append(f"{inicio} -> {fins}")
     return ' | '.join(partes)
 
+# Metodo que elimina o caminho para um cliente do caminho definido na stream
 def splitTracks(track, client_ip):
     partes = track.split(" | ")
     last = partes.pop()
