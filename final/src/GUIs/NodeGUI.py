@@ -1,7 +1,7 @@
 import threading
 import socket
-from NodeData import *
-from Packet import *
+from src.NodeData import *
+from src.Packet import *
 
 class NodeGUI:
 

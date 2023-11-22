@@ -1,10 +1,15 @@
 from time import sleep
-from NodeGUI import NodeGUI
-from NodeData import NodeData
-from RPGUI import RPGUI
-from ClienteGUI import ClienteGUI
-from ServerGUI import ServerGUI
+from src.NodeData import NodeData
+from src.GUIs.NodeGUI import NodeGUI
+from src.GUIs.RPGUI import RPGUI
+from src.GUIs.ClienteGUI import ClienteGUI
+from src.GUIs.ServerGUI import ServerGUI
 
+'''
+Este é o metodo que é executado e apenas é necessario indicar qual o ip da estrutura em questao
+e ele ira chamar a Nodedata para retirar do ficheiro de configuração a informação que a ele 
+corresponde e depois consuante o tipo de estrutura que é executada de acordo com esse tipo
+'''
 if __name__ == "__main__":
     try:
         # Obtém o endereço IP local da máquina

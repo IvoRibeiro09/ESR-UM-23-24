@@ -1,10 +1,10 @@
 import socket
 import threading
 import tkinter as tk
-from auxiliarFunc import *
-from Stream import *
-from NodeData import *
-from Packet import *
+from src.auxiliarFunc import *
+from src.Stream import *
+from src.NodeData import *
+from src.Packet import *
 
 class RPGUI:
 

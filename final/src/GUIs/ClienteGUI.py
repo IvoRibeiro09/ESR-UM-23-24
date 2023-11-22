@@ -2,8 +2,8 @@ import tkinter as tk
 import socket
 import threading
 from PIL import ImageTk
-from Packet import *
-from NodeData import *
+from src.Packet import *
+from src.NodeData import *
 
 '''
 Esta é a classe principal para o Cliente

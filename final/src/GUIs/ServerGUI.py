@@ -2,10 +2,8 @@ import socket
 import threading
 import time
 import cv2
-import tkinter as tk
-from PIL import ImageTk
-from Packet import *
-from NodeData import *
+from src.Packet import *
+from src.NodeData import *
 
 class ServerGUI:
 

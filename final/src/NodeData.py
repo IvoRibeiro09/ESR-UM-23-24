@@ -1,4 +1,4 @@
-from auxiliarFunc import *
+from src.auxiliarFunc import *
 
 '''
 Esta é a classe principal para a esrutura de dados usada para todas as interfaces do sistema
