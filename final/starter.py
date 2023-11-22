@@ -1,3 +1,4 @@
+from time import sleep
 from NodeGUI import NodeGUI
 from NodeData import NodeData
 from RPGUI import RPGUI
@@ -18,8 +19,10 @@ if __name__ == "__main__":
         else:
             node = NodeGUI(nodedata)
             if nodedata.getType() == "Client":
+                sleep(5)
                 cliente = ClienteGUI(nodedata)
             elif nodedata.getType() == "Server":
+                sleep(3)
                 servidor = ServerGUI(nodedata)
 
     except Exception as e:

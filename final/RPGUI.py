@@ -1,5 +1,6 @@
 import socket
 import threading
+import tkinter as tk
 from auxiliarFunc import *
 from Stream import *
 from NodeData import *
@@ -12,11 +13,14 @@ class RPGUI:
         self.clients_logged = {}
         self.streamList = {}
         self.caminhos = []
+        self.janela = None
+        self.condition = threading.Condition()
+        self.conditionBool = False
         self.startRP()
 
     def startRP(self):
         print("Starting...")
-        thread0 = threading.Thread(target=self.recieveNodeConnection)
+        thread0 = threading.Thread(target=self.NodeConnection)
         thread1 = threading.Thread(target=self.clientConnection)
         thread2 = threading.Thread(target=self.serverConnection)
         thread3 = threading.Thread(target=self.streamConnection)
@@ -27,33 +31,82 @@ class RPGUI:
 
     #-----------------------------------------------------------------------------------------
     # Tratamento de Nós
+    def NodeConnection(self):
+        thread = threading.Thread(target=self.startNetwork)
+        thread.start()
+        self.recieveNodeConnection()
+
+    def startNetwork(self):
+        self.janela = tk.Tk()
+        self.janela.title(f'RendezvousPoint: {NodeData.getIp(self.node)}')
+        self.label = tk.Label(self.janela, width=60, padx=10, pady=10)
+        self.label["text"] = "Deseja construir a rede overlay?"
+        self.label.grid(row=0, column=0, padx=10, pady=10)	
+        self.botaoStart = tk.Button(self.janela, width=30, padx=10, pady=10)
+        self.botaoStart["text"] = "Start"
+        self.botaoStart["command"] = self.startTest
+        self.botaoStart.grid(row=1, column=0, padx=10, pady=10)
+        self.janela.mainloop()
+
+        with self.condition:
+            while not self.conditionBool:
+                self.condition.wait()
+        self.conditionBool = False
+
+        try:
+            msg = "Start Network"
+            msg_data = (
+                len(msg).to_bytes(4, 'big') +
+                msg.encode('utf-8')
+            )
+            for node in NodeData.getNeighboursAddress(self.node):
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_starter_socket:      
+                        node_adress = (node, NodeData.getNodePort(self.node))
+                        node_starter_socket.connect(node_adress)
+                        node_starter_socket.sendall(msg_data)
+                except Exception:
+                    print("Erro ao enviar mensagem de iniciar a rede para o no: ", node)
+                finally:
+                    node_starter_socket.close()
+        except Exception as e:
+            print("Erro ao iniciar a rede overlay: ", e)
+        finally:
+            node_starter_socket.close()
+
+    def startTest(self):
+        with self.condition:
+            self.conditionBool = True
+            self.condition.notify()
+        self.janela.destroy()
+        
     def recieveNodeConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_socket:
-            node_socket.bind(socket_address)
-            node_socket.listen(1)
-            print("RP waiting for Node connections: ", socket_address)
-            try:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_socket:
+                node_socket.bind(socket_address)
+                node_socket.listen(1)
+                print("RP waiting for Node connections: ", socket_address)
                 while True:
                     client_connection,_ = node_socket.accept()
 
                     size = client_connection.recv(4)
                     msg_size = int.from_bytes(size, byteorder='big')
 
-                    msg = b""
-                    while len(msg) < msg_size:
-                        msg += client_connection.recv(msg_size - len(msg))
+                    msg_data = client_connection.recv(msg_size)
+                    mensagem = msg_data.decode('utf-8')
+                    
+                    if "Start Network" not in mensagem:
+                        mensagem = mensagem + " <- " + NodeData.getIp(self.node)
+                        cam = inverter_relacoes(mensagem)
+                        print("New connection: " + cam)
+                        self.caminhos.append(cam)
+                        client_connection.close()
 
-                    mensagem = msg.decode('utf-8')
-                    mensagem = mensagem + " <- " + NodeData.getIp(self.node)
-                    cam = inverter_relacoes(mensagem)
-                    print("New connection: " + cam)
-                    self.caminhos.append(cam)
-                    client_connection.close()
-            except Exception as e:
-                print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
-            finally:
-                node_socket.close()
+        except Exception as e:
+            print(f"Erro na receção dos caminhos para os Nós no RP: ",e)
+        finally:
+            node_socket.close()
 
     #-----------------------------------------------------------------------------------------
     # Tratamento de Clientes

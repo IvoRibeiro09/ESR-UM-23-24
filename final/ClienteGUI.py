@@ -20,11 +20,12 @@ class ClienteGUI:
         
     def clientStart(self):
         try:
-            self.inicialConnection()
-            self.askStreamTransmission()
-            thread = threading.Thread(target=self.streamTransmission())
-            thread.start()
-            thread.join()
+            while True:
+                self.inicialConnection()
+                self.askStreamTransmission()
+                thread = threading.Thread(target=self.streamTransmission)
+                thread.start()
+                thread.join()
         except Exception as e:
             print(e)
             
@@ -47,6 +48,8 @@ class ClienteGUI:
             print("Pedido de quais videos exixtem no RP recebido")
         except Exception as e:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
+        finally:
+            se
 
     def askStreamTransmission(self):
         self.clienteInterface()
@@ -81,17 +84,12 @@ class ClienteGUI:
         try:
             mensagem = f"Stream- {video}"
             self.rp_socket.sendall((mensagem).encode())
-            with self.condition:
-                self.conditionBool = True
-                self.condition.notify()
         finally:
             self.janela.destroy()
             self.rp_socket.close()
-    
-    def waitselction(self):
         with self.condition:
-            print("waiting")
-            self.condition.wait()
+            self.conditionBool = True
+            self.condition.notify()
     
     def streamTransmission(self):
         print("Cliente aguarda video...")
@@ -116,11 +114,11 @@ class ClienteGUI:
         self.botaoClose.grid(row=1, column=1, padx=10, pady=10)
         # recebe o video em bytes do cliente
         i = 0
-        my_address = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
-            try:
-                socketForStream.bind(my_address)
-                print(f"{my_address} à espera de conexões de Streams: ")
+        my_address_udp = (NodeData.getIp(self.node), NodeData.getStreamPort(self.node))
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as socketForStream:
+                socketForStream.bind(my_address_udp)
+                print(f"{my_address_udp} à espera de conexões de Streams: ")
                 while self.status != "Closed":
                     #parse packet | Recebe o tamanho do frame (4 bytes) do servidor
                     data, _ = socketForStream.recvfrom(Packet_size)
@@ -152,10 +150,12 @@ class ClienteGUI:
                             self.label.configure(image=img)
                             self.label.image = img   
                     self.janela.update()
-            except Exception as e:
-                print(f"Erro ao receber vídeo: {e}")
-            finally:
-                socketForStream.close()
+        except Exception as e:
+            print(f"Erro ao receber vídeo: {e}")
+        finally:
+            socketForStream.close()
+            self.janela.destroy()
+            print("Closing Stream...")
 
     def pauseStream(self):
         if self.status == "Playing":
@@ -168,8 +168,8 @@ class ClienteGUI:
             self.botaoPause["text"] = "Pause"
 
     def closeStream(self):
-        print("Closing Stream...")
         try:
+            self.status = "Closed"
             self.rp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.rp_socket.bind(self.my_address)
             self.rp_socket.connect(NodeData.getRPAddress(self.node))
@@ -183,9 +183,7 @@ class ClienteGUI:
             print(f"Erro ao enviar mensagem de fechar a Stream para o servidor: {e}")
         finally:
             self.rp_socket.close()
-            self.status = "Closed"
-            self.janela.destroy()
-        
+            
     def verifyFrame(self):
         # verificar se os 3 elementos da lista sao do mesmo pacote
         pack1 = self.packetQueue[0]
