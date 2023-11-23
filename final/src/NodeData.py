@@ -78,17 +78,23 @@ class NodeData:
     def parse_file(self, filepath):
         try:
             with open(filepath, 'r') as f:
+                readComunData = True
                 read = False
                 for line in f:
+                    if "---common information---" in line:
+                        readComunData = True
+                    if readComunData:
+                        if "nodePort- " in line:
+                            self.setNodePort(extrair_numero(line))
+                        elif "streamPort- " in line:
+                            self.setStreamPort(extrair_numero(line))
+                        elif "------" in line:
+                            readComunData = False
                     if f"ip- {self.IP}" in line:
                         read = True
                     if read:
                         if "type- " in line:
                             self.setType(extrair_texto(line))
-                        elif "nodePort- " in line:
-                            self.setNodePort(extrair_numero(line))
-                        elif "streamPort- " in line:
-                            self.setStreamPort(extrair_numero(line))
                         elif "neighbour- " in line:
                             self.setNeighboursAddress(extrair_texto(line))
                         elif "rp- " in line:
