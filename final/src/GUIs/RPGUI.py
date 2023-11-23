@@ -213,7 +213,7 @@ class RPGUI:
             
             # Cria uma Stream por transmissao de cada servidor
             for videoname in lista_de_videos:
-                stream = Stream(videoname,(addr[0],NodeData.getPortaServer(self.node)))
+                stream = Stream(videoname, NodeData.getNodePort(self.node), (addr[0],NodeData.getPortaServer(self.node)))
                 self.streamList[stream.name] = stream
             
             print(f'Stream list updated with: {lista_de_videos}')

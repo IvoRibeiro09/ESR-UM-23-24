@@ -1,11 +1,13 @@
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
-Node_Port = 22222
 Packet_size = 60000 
 
+'''
+Classe que define o pacote que onde a informação sobre os frames é passada 
+'''
 class Packet:
-    def __init__(self, name, n, Frame):
-        self.info = name
+    def __init__(self, info, n, Frame):
+        self.info = info
         self.frameNumber = n
         self.frame = Frame
 
@@ -19,11 +21,11 @@ class Packet:
     def getFrame(self):
         return self.frame
 
+    # Metodo que construi o pacote em bytes para ser enviado via socket
     def buildPacket(self):
         info_bytes = self.info.encode('utf-8')
         frame_bytes = self.frame
 
-        # Calcule o número de bytes necessários para preencher o pacote
         padding_size = Packet_size - (4 + len(info_bytes) + 4 + len(frame_bytes))
         packet_data = (
             len(info_bytes).to_bytes(4, byteorder='big') +
@@ -35,6 +37,7 @@ class Packet:
         )
         return packet_data
 
+    # Metodo que estrai o conteudo do pacote para a estrutura de dados defenida
     def parsePacket(self, data):
         offset = 0
         name_size = int.from_bytes(data[offset:offset + 4], byteorder='big')

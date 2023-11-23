@@ -1,5 +1,6 @@
 from time import sleep
 from src.NodeData import NodeData
+from src.GUIs.NodeOverlayGUI import NodeOverlayGUI
 from src.GUIs.NodeGUI import NodeGUI
 from src.GUIs.RPGUI import RPGUI
 from src.GUIs.ClienteGUI import ClienteGUI
@@ -22,13 +23,15 @@ if __name__ == "__main__":
         if nodedata.getType() == "RendezvousPoint":
             rp = RPGUI(nodedata)
         else:
-            node = NodeGUI(nodedata)
+            node = NodeOverlayGUI(nodedata)
             if nodedata.getType() == "Client":
                 sleep(5)
                 cliente = ClienteGUI(nodedata)
             elif nodedata.getType() == "Server":
                 sleep(3)
                 servidor = ServerGUI(nodedata)
+            elif nodedata.getType() == "Node":
+                node = NodeGUI(nodedata)
 
     except Exception as e:
         print(f'Ocorreu um erro: {str(e)}')

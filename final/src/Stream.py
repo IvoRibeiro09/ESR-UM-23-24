@@ -1,6 +1,7 @@
 import socket
 from src.auxiliarFunc import *
 from src.Packet import *
+from src.NodeData import *
 
 '''
 Esta é a classe Stream implementada para auxiliar o RP a gerenciar as Streams no que toca 
@@ -8,8 +9,9 @@ a receber e enviar dados, e gerenciar para quem continuar a mandar assim como o 
 por onde a informação tem de passar
 '''
 class Stream():
-    def __init__(self, name, server):
+    def __init__(self, name, nodePort, server):
         self.name = name
+        self.nodePort = nodePort
         self.server_address = server
         self.status = "Closed" # "Pending" "Streaming"
         self.stream_track = None
@@ -91,7 +93,7 @@ class Stream():
                         # Criar o pacote com o caminho ate os cliente
                         pck = Packet(track[1], frameNumber, frame)
                         dataToSend = pck.buildPacket()
-                        send_address = (track[0], Node_Port)
+                        send_address = (track[0], self.nodePort)
                         
                         stream_socket.sendto(dataToSend, send_address)
                 except Exception as e:
