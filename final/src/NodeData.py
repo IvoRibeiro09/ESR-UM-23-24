@@ -11,6 +11,7 @@ class NodeData:
         self.type = None
         self.node_port = None
         self.stream_port = None
+        self.ident = None
         self.neighbours_address = []
         self.RP_address = None
         self.PORTACLIENT = None
@@ -30,6 +31,9 @@ class NodeData:
     
     def getStreamPort(self):
         return int(self.stream_port)
+    
+    def getIdent(self):
+        return str(self.ident)
     
     def getNeighboursAddress(self):
         return list(self.neighbours_address)
@@ -58,7 +62,10 @@ class NodeData:
 
     def setStreamPort(self, porta):
         self.stream_port = porta
-
+    
+    def setIdent(self, ident):
+        self.ident = ident
+    
     def setNeighboursAddress(self, neigh):
         self.neighbours_address.append(neigh)
 
@@ -88,6 +95,8 @@ class NodeData:
                             self.setNodePort(extrair_numero(line))
                         elif "streamPort- " in line:
                             self.setStreamPort(extrair_numero(line))
+                        elif "ident- " in line:
+                            self.setIdent(extrair_texto(line))
                         elif "------" in line:
                             readComunData = False
                     if f"ip- {self.IP}" in line:

@@ -2,6 +2,7 @@ Config File
 ---common information---
 nodePort- 11111
 streamPort- 22222
+ident- 127.0.
 ------
 ip- 10.0.12.2
 type- RendezvousPoint

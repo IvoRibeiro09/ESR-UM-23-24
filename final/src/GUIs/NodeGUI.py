@@ -31,20 +31,17 @@ class NodeGUI:
                     
                     pck = Packet("","", "")
                     pck.parsePacket(data)
-                    caminhos = []
-                    extrair_conexoes(caminhos, pck.info)
-                    
+                    caminhos = extrair_conexoes(NodeData.getIp(self.node), NodeData.getIdent(self.node), pck.info)
+                    #print(caminhos)
                     #e enviar para todos os clientes
                     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                         try:
                             for nei in caminhos:
-                                print(f"caminhos: {nei} pacote nª: {pck.frameNumber}")
-                                pckToSend = Packet(nei[1],pck.frameNumber, pck.frame)
-                                dataToSend = pckToSend.buildPacket()
-                                send_address = (nei[0], NodeData.getNodePort(self.node))
-                                stream_socket.sendto(dataToSend, send_address)
+                                print(f"pacote enviado para: {nei} pacote nª: {pck.frameNumber}")
+                                send_address = (nei, NodeData.getStreamPort(self.node))
+                                stream_socket.sendto(data, send_address)
                         except Exception as e:
-                            print(f"Error sending stream from Node{NodeData.getIp(self.node)}: {e}")
+                            print(f"Error sending stream from Node {NodeData.getIp(self.node)}: {e}")
                         finally:
                             stream_socket.close()                   
             except Exception as e:

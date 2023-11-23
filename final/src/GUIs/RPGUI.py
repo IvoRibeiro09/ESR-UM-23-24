@@ -108,7 +108,7 @@ class RPGUI:
                     if "Start Network" not in mensagem:
                         mensagem = mensagem + " <- " + NodeData.getIp(self.node)
                         cam = inverter_relacoes(mensagem)
-                        print("New connection: " + cam)
+                        print("New connection: ", cam)
                         self.caminhos.append(cam)
                         client_connection.close()
 
@@ -156,8 +156,9 @@ class RPGUI:
                     selectedStream = extrair_texto(recv_msg)
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
-                    
-                    Stream.addClient(stream, addr[0], self.caminhos)
+                    melhor_caminho = Stream.getBestTrack(addr[0], self.caminhos)
+                    print("melhor caminho: ", melhor_caminho)
+                    Stream.addClient(stream, addr[0], melhor_caminho)
                     print(f"Client {addr} added to Stream {selectedStream}")
 
             elif mensagem == "Connection closed":
@@ -213,7 +214,7 @@ class RPGUI:
             
             # Cria uma Stream por transmissao de cada servidor
             for videoname in lista_de_videos:
-                stream = Stream(videoname, NodeData.getNodePort(self.node), (addr[0],NodeData.getPortaServer(self.node)))
+                stream = Stream(videoname, NodeData.getStreamPort(self.node), (addr[0],NodeData.getPortaServer(self.node)))
                 self.streamList[stream.name] = stream
             
             print(f'Stream list updated with: {lista_de_videos}')

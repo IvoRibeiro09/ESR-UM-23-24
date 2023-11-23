@@ -49,28 +49,32 @@ def invert_ip_addresses(address_string):
     inverted_address = f"{addresses[1].strip()} -> {addresses[0].strip()}"
     return inverted_address
 
-# Metodo que permite criar e adicionar caminhos a enviar por uma stream
-def extrair_conexoes(lista, input_string):
+# Metodo que devolve a lista de nodos vizinhos para quem tem de enviar o pacote
+def extrair_conexoes(ip, ident, input_string):
+    ip_terminação = f"{ip.split('.')[-2]}.{ip.split('.')[-1]}"
+    send_list = []
     try:
         if "|" in input_string:
-            partes = input_string.split(' | ',1)
-            conexao = partes[0].split(" -> ")
-            if "," in conexao[1]:
-                ips = conexao[1].split(",")
-                for i in ips:
-                    if i in partes[1]:
-                        lista.append((i, partes[1]))
-            else:
-                if conexao[1] in  partes[1]:
-                    lista.append((conexao[1], partes[1]))
+            partes = input_string.split('|')
+            for p in partes:
+                send_recv = p.split(":")
+                if ip_terminação in send_recv[0]:
+                    if "," in send_recv[1]:
+                        ips = send_recv[1].split(",")
+                        for i in ips:
+                            send_list.append(f"{ident}{i}")
+                    else:
+                        send_list.append(f"{ident}{send_recv[1]}")
         else:
-            conexao = input_string.split(" -> ")
-            if "," in conexao[1]:
-                ips = conexao[1].split(",")
-                for i in ips:
-                    lista.append((i,""))
-            else:
-                lista.append((conexao[1],""))
+            send_recv = input_string.split(":")
+            if ip_terminação in send_recv[0]:
+                if "," in send_recv[1]:
+                    ips = send_recv[1].split(",")
+                    for i in ips:
+                        send_list.append(f"{ident}{i}")
+                else:
+                    send_list.append(f"{ident}{send_recv[1]}")
+        return send_list
     except Exception as e:
         print("Erro ao criar a lista de tuplos",e)
     
