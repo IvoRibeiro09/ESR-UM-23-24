@@ -142,7 +142,6 @@ class RPGUI:
             mensagem = conn.recv(1024).decode()
 
             if mensagem == "VideoList":
-                print(f"Client {addr} connected!")
                 if not self.streamList:
                     noVidmsg = "I DONT HAVE STREAMS"
                     conn.sendall(noVidmsg.encode())
@@ -157,26 +156,15 @@ class RPGUI:
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
                     melhor_caminho = Stream.getBestTrack(addr[0], self.caminhos)
-                    print("melhor caminho: ", melhor_caminho)
+                    
                     Stream.addClient(stream, addr[0], melhor_caminho)
-                    print(f"Client {addr} added to Stream {selectedStream}")
+                    print(f"Client {addr} connected and watching Stream {selectedStream}")
 
             elif mensagem == "Connection closed":
                 stream_do_cliente = self.clients_logged[addr[0]]
                 stream = self.streamList[stream_do_cliente]
                 Stream.rmvClient(stream, addr[0])
-                # avisar o Server para parar de stremar
-                if Stream.getStatus(stream) == "Closed":
-                    server_address = (Stream.getServerAddress(stream)[0], NodeData.getPortaServer(self.node))
-                    print(server_address)
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_server:
-                        socket_server.connect((Stream.getServerAddress(stream)[0],NodeData.getPortaServer(self.node)))
-
-                        mensagem = f"Stop Stream- {stream_do_cliente}"
-                        socket_server.send(mensagem.encode('utf-8'))
-                        
-                        socket_server.close()
-                
+            
                 del self.clients_logged[addr[0]]
                 print(f"Client {addr[0]} disconnected.")
 

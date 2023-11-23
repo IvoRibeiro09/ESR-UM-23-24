@@ -95,17 +95,22 @@ class Stream():
     # verificando se o servidro ainda precisa de enviar a Stream
     def rmvClient(self, client_ip):
         try:
-            '''
-            for track in self.trackToSendList:
-                if client_ip in track[1]:
-                    new_track = splitTracks(track[1], client_ip)
-                    if new_track:
-                        self.Node_Track.append((track[0], new_track))
-                    self.Node_Track.remove(track)
-                    if self.Node_Track == []:
-                        self.status = "Closed"
+            for t in self.trackToClientesList:
+                if client_ip in t:
+                    self.trackToClientesList.remove(t)
+                    if self.trackToClientesList == []: self.status = "Closed"
                     break
-        '''
+            self.updateTrackToSendList()
+            # avisar o Server para parar de stremar
+            if self.status == "Closed":
+                print(self.server_address)
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_server:
+                    socket_server.connect(self.server_address)
+
+                    mensagem = f"Stop Stream- {self.name}"
+                    socket_server.send(mensagem.encode('utf-8'))
+                    
+                    socket_server.close()
         except Exception as e:
             print("Erro ao remover o caminho para o cliente que deu dsiconnect: ", e)
 
