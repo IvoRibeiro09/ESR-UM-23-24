@@ -71,7 +71,7 @@ class RPGUI:
     '''Metodo responsavel por enviar a mensagem de "Update Network" aos nodos vizinhos que iram fazer o 
     mesmo para que seja possivel iniciaram a construção da rede no sentido inverso'''
     def sendNodeConnection(self):
-        print("RP asked for an update on the Network")
+        print("RP asked for an update on the Network | current nª:",self.networkUpdateNumber)
         try:
             msg = f"Update Network-{self.networkUpdateNumber}"
             self.networkUpdateNumber += 1
@@ -116,7 +116,7 @@ class RPGUI:
                     if "Update Network" not in mensagem:
                         mensagem = mensagem + " <- " + NodeData.getIp(self.node)
                         cam = inverter_relacoes(mensagem)
-                        print("New connection: ", cam)
+                        #print("New connection: ", cam)
                 
                         if ":clst-" in mensagem:
                             caminho, cliente_st = getTrackAndTime(cam)
@@ -162,9 +162,12 @@ class RPGUI:
                             stream = self.streamList[streamNameClientIsWatching]
                             Stream.updateTrackToClientList(stream, client_IP, new_track)
                     self.clientBestTrack[client_IP] = (elapsed_time, new_track)
-            print("Lista com os clientes e o caminho mais rapido atualizada: ", self.clientBestTrack)
         except Exception as e:
             print("Erro na atualização do melhor caminho para o cliente: ",e)
+        finally:
+            print("Lista de caminhos para os clientes (ip -> caminho : tempo):")
+            for i in self.clientBestTrack.keys():
+                print(f"\t{i} -> {self.clientBestTrack[i][1]} : {self.clientBestTrack[i][0]}")
 
     #-----------------------------------------------------------------------------------------
     # Tratamento de Clientes

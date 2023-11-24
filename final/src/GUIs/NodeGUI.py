@@ -9,12 +9,8 @@ Esta é a classe principal para o Node
 class NodeGUI:
     def __init__(self, node):
         self.node = node
-        self.start()
-
-    def start(self):
-        thread2 = threading.Thread(target=self.streamConnection)
-        thread2.start()  
-
+        self.streamConnection()
+ 
     #-----------------------------------------------------------------------------------------
     # Receber de Streams e enviar
     def streamConnection(self):
