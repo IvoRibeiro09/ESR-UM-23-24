@@ -91,6 +91,7 @@ stream- ../VIDEO/Slow_J.mp4
 ip- 127.0.0.1
 type- RendezvousPoint
 neighbour- 127.0.0.2
+neighbour- 127.0.0.22
 neighbour- 127.0.0.3
 neighbour- 127.0.0.6
 portaClient- 12345
