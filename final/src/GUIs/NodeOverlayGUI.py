@@ -82,7 +82,7 @@ class NodeOverlayGUI:
                 # metrica de escolha do caminho optimo no rp
                 if NodeData.getType(self.node) == "Client":
                     st_time = time.time()
-                    firstConMsg = f"{NodeData.getIp(self.node)}:clst-{st_time}"
+                    firstConMsg = f"{NodeData.getIp(self.node)} :clst- {st_time} :n- {self.networkUpdateNumber}"
                 else:
                     firstConMsg = NodeData.getIp(self.node)
                 self.sendMessageToAdjacentNodes(firstConMsg)

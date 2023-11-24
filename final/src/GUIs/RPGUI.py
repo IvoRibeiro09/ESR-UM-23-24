@@ -119,9 +119,9 @@ class RPGUI:
                         #print("New connection: ", cam)
                 
                         if ":clst-" in mensagem:
-                            caminho, cliente_st = getTrackAndTime(cam)
+                            caminho, cliente_st, updateNumber = getTrackAndTimeAndUpdateNumber(cam)
                             self.caminhos.append(caminho)
-                            self.updateBestTrack(caminho, cliente_st)
+                            self.updateBestTrack(caminho, cliente_st, updateNumber)
                         else:
                             self.caminhos.append(cam)
                     
@@ -144,30 +144,37 @@ class RPGUI:
 
     ''' Metodo que avalia se o novo caminho é o mais rapido para chegar ao cliente se sim atualiza-o
     Se o cliente estiver a ver uma Transmissão essa alteração do melhor caminho é indicada e utilizada'''
-    def updateBestTrack(self, new_track, client_st):
+    def updateBestTrack(self, new_track, client_st, updateNumber):
         try:
+            Updated = False
             client_IP = getClientIP(new_track)
             end_time = time.time()
-            elapsed_time = end_time - float(client_st)
+            elapsed_time = end_time - client_st
             
             if not self.clientBestTrack.get(client_IP):
-                self.clientBestTrack[client_IP] = (elapsed_time, new_track)
+                self.clientBestTrack[client_IP] = (new_track, elapsed_time, updateNumber)
             else:
-                best_time, best_track = self.clientBestTrack[client_IP]
-                if elapsed_time < best_time:
-                    if new_track != best_track:
-                        # se o cliente estiver a assitir update stream que tem o cliente
-                        if self.clients_logged.get(client_IP):
-                            streamNameClientIsWatching = self.clients_logged[client_IP]
-                            stream = self.streamList[streamNameClientIsWatching]
-                            Stream.updateTrackToClientList(stream, client_IP, new_track)
-                    self.clientBestTrack[client_IP] = (elapsed_time, new_track)
+                current_track, current_time, current_updateNumber = self.clientBestTrack[client_IP]
+                # Atualizar a cada Network Update
+                if current_updateNumber < self.networkUpdateNumber - 1:
+                    self.clientBestTrack[client_IP] = (new_track, elapsed_time, updateNumber)
+                    Updated = True
+                # Caso seja outro caminho possivel se o tempo for menor optar pelo caminho
+                elif current_updateNumber == self.networkUpdateNumber - 1 and elapsed_time < current_time:
+                    self.clientBestTrack[client_IP] = (new_track, elapsed_time, updateNumber)
+                    Updated = True
+                # Se o caminho for diferente e o cliente estiver a ver uma transmissao mudar  
+                if current_track != new_track and Updated and self.clients_logged.get(client_IP):
+                    streamNameClientIsWatching = self.clients_logged[client_IP]
+                    stream = self.streamList[streamNameClientIsWatching]
+                    Stream.updateTrackToClientList(stream, client_IP, new_track) 
         except Exception as e:
             print("Erro na atualização do melhor caminho para o cliente: ",e)
         finally:
-            print("Lista de caminhos para os clientes (ip -> caminho : tempo):")
-            for i in self.clientBestTrack.keys():
-                print(f"\t{i} -> {self.clientBestTrack[i][1]} : {self.clientBestTrack[i][0]}")
+            if Updated:
+                print("Lista de caminhos para os clientes:")
+                for i in self.clientBestTrack.keys():
+                    print(f"\tIP[{i}] TRACK[{self.clientBestTrack[i][0]}] TIMESTAMP[{self.clientBestTrack[i][1]}] Update nª[{self.clientBestTrack[i][2]}]")
 
     #-----------------------------------------------------------------------------------------
     # Tratamento de Clientes
@@ -209,7 +216,7 @@ class RPGUI:
                     self.clients_logged[addr[0]] = selectedStream
                     #melhor_caminho = Stream.getBestTrack(addr[0], self.caminhos)
                     
-                    Stream.addClient(stream, addr[0], self.clientBestTrack[addr[0]][1])
+                    Stream.addClient(stream, addr[0], self.clientBestTrack[addr[0]][0])
                     print(f"Client {addr} connected and watching Stream {selectedStream}")
 
             elif mensagem == "Connection closed":

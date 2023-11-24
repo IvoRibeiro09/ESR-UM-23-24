@@ -119,25 +119,12 @@ def combinar_caminhos(caminho1, caminho2):
     for inicio, fins in conexoes_dict.items():
         partes.append(f"{inicio} -> {fins}")
     return ' | '.join(partes)
-'''
-# Metodo que elimina o caminho para um cliente do caminho definido na stream
-def splitTracks(track, client_ip):
-    partes = track.split(" | ")
-    last = partes.pop()
-    if "," in last:
-        conn = last.split(" -> ")
-        ips = conn[1].split(",")
-        novos_ips = f"{conn[0]} -> "
-        novos_ips += ",".join(ip for ip in ips if ip != client_ip)
 
-        partes.append(novos_ips)
-        return ' | '.join(partes)
-    return None
-'''
 # Metodo que separa o caminho do timestamp de um caminho enviado por um cliente
-def getTrackAndTime(caminho):
-    partes = caminho.split(":clst-")
-    return (partes[0], partes[1])
+def getTrackAndTimeAndUpdateNumber(caminho):
+    partes = caminho.split(" :clst- ")
+    partes2 = partes[1].split(" :n- ")
+    return (partes[0], float(partes2[0]), int(partes2[1]))
 
 # Metodo que devolve o ip do cliente de para um determinado caminho
 def getClientIP(caminho):
