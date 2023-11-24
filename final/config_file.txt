@@ -81,6 +81,11 @@ neighbour- 127.0.0.1
 rp- 127.0.0.1 - 12346
 stream- ../VIDEO/Central_Cee.mp4
 stream- ../VIDEO/Matue.mp4
+------
+ip- 127.0.0.22
+type- Server
+neighbour- 127.0.0.1
+rp- 127.0.0.1 - 12346
 stream- ../VIDEO/Slow_J.mp4
 ------
 ip- 127.0.0.1

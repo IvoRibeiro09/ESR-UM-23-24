@@ -10,7 +10,7 @@ from src.Packet import *
 '''
 Esta é a classe principal para o RendezvousPoint
 '''
-MaintenanceTime = 50
+MaintenanceTime = 5
 class RPGUI:
     def __init__(self, node):
         self.node = node

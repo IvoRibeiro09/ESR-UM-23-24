@@ -155,9 +155,9 @@ class Stream():
         except Exception as e:
             print("Erro no update da lista de caminhos a adicionar aos pacotes: ", e)
         finally:
-            print(f"Stream: {self.name} vai ser enviada para os nodos:")
+            print(f"Lista de nós vizinhos que vão receber a Stream {self.name} alterada")
             for i in self.trackToSendList:
-                print(f"\tVizinho: {i[0]} com: {i[1]} como mensagem")
+                print(f"\tNó: {i[0]} com mensagem: {i[1]}")
 
     def updateTrackToClientList(self, client_IP, new_track):
         try:
