@@ -1,6 +1,7 @@
 from src.NodeData import *
 import threading
 import socket
+import time
 
 '''
 Esta é a classe principal para o NodeOverlay
@@ -13,6 +14,7 @@ class NodeOverlayGUI:
         self.status = "Closed" # |"Open"
         self.condition = threading.Condition()
         self.conditionBool = False
+        self.networkUpdateNumber = -1
         self.start()
 
     # Abre a receção de conexoes com os seus vizinhos e espera a rede ser estabelicida uma vez
@@ -44,31 +46,48 @@ class NodeOverlayGUI:
                     msg_data = client_connection.recv(msg_size)
                     mensagem = msg_data.decode('utf-8')
 
-                    # Se for uma mensagem de update network é pq o RP pediu uma atualização da rede
-                    # e entao tenho de enviar essa mensagem para os vizinhos para que eles recebam essa informação
-                    # para além disso ele envia uma mensagem com o seu ip para os seus vizinhos com o obtivo de
-                    # essa mensagem chegar ao RP com o respetivo caminho (nodo ate ao RP)
-                    if "Start Network" in mensagem:
-                        if self.status == "Closed":
-                            self.status = "Open"
-                            self.sendMessageToAdjacentNodes(mensagem)
-                            firstConMsg = NodeData.getIp(self.node)
-                            self.sendMessageToAdjacentNodes(firstConMsg)
-                            with self.condition:
-                                self.conditionBool = True
-                                self.condition.notify()
-                    else:
+                    if self.status == "Closed" and "Update Network-" in mensagem:
+                        self.status = "Open"
+                        self.processUpdateNetwork(mensagem)
+                        with self.condition:
+                            self.conditionBool = True
+                            self.condition.notify()
+                    elif self.status == "Open":
+                        if "Update Network" in mensagem:
+                            self.processUpdateNetwork(mensagem)
                         # Trata de adicionar a sua posição ao caminho de um vizinho ate ao rp
-                        # Caso o seu IP esteja na mensagem não ira voltar a enviar essa mensagem para evitar loops infinitos
-                        if NodeData.getIp(self.node) not in mensagem and self.status == "Open":
-                            mensagem = mensagem + " <- " + NodeData.getIp(self.node) + " | " + NodeData.getIp(self.node)
-                            self.sendMessageToAdjacentNodes(mensagem)
-                    
+                        elif NodeData.getIp(self.node) not in mensagem:
+                                mensagem = mensagem + " <- " + NodeData.getIp(self.node) + " | " + NodeData.getIp(self.node)
+                                self.sendMessageToAdjacentNodes(mensagem)
+                    # Caso o seu IP esteja na mensagem não ira voltar a enviar essa mensagem para evitar loops infinitos  
                     client_connection.close()
         except Exception as e:
             print(f"Erro na receção de conexões no Nodo {NodeData.getIp(self.node)}")
         finally:
             server_socket.close()
+
+    '''Se for uma mensagem de update network é pq o RP pediu uma atualização da rede
+    e entao tenho de enviar essa mensagem para os vizinhos para que eles recebam essa informação
+    para além disso ele envia uma mensagem com o seu ip para os seus vizinhos com o objetivo de
+    essa mensagem chegar ao RP com o respetivo caminho (nodo ate ao RP)'''
+    def processUpdateNetwork(self, mensagem):
+        try:
+            # enviar o pedido de update Network se coressponder a um novo pedido do RP
+            update_number = extrair_numero(mensagem)
+            if update_number > self.networkUpdateNumber:
+                self.networkUpdateNumber = update_number
+                self.sendMessageToAdjacentNodes(mensagem)
+                # enviar o ip para os vizinhos para que o caminho do nó ate ao RP chegue ao mesmo
+                # Se for um cliente enviamos ainda o timeStamp atual para que possa ser usa na 
+                # metrica de escolha do caminho optimo no rp
+                if NodeData.getType(self.node) == "Client":
+                    st_time = time.time()
+                    firstConMsg = f"{NodeData.getIp(self.node)}:clst-{st_time}"
+                else:
+                    firstConMsg = NodeData.getIp(self.node)
+                self.sendMessageToAdjacentNodes(firstConMsg)
+        except Exception as e:
+            print("Erro ao processar a mensagem de Update Network: ",e)
 
     # Metodo que envia determinada mensagem para todos os nodos vizinhos 
     def sendMessageToAdjacentNodes(self, mensagem):
@@ -83,6 +102,6 @@ class NodeOverlayGUI:
                     )
                     s.sendall(msg)
                 except Exception as e:
-                    print(f"Não foi possível enviar mensagem para {adj[0]}:{adj[1]}. Erro: {str(e)}")
+                    print(f"Não foi possível enviar mensagem para {adj}:{str(e)}")
                 finally:
                     s.close()

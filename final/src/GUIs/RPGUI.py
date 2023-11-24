@@ -1,6 +1,7 @@
 import socket
 import threading
 import tkinter as tk
+import time
 from src.auxiliarFunc import *
 from src.Stream import *
 from src.NodeData import *
@@ -9,12 +10,15 @@ from src.Packet import *
 '''
 Esta é a classe principal para o RendezvousPoint
 '''
+MaintenanceTime = 50
 class RPGUI:
     def __init__(self, node):
         self.node = node
         self.clients_logged = {}
         self.streamList = {}
+        self.networkUpdateNumber = 0
         self.caminhos = []
+        self.clientBestTrack = {}
         self.janela = None
         self.condition = threading.Condition()
         self.conditionBool = False
@@ -34,15 +38,15 @@ class RPGUI:
     #-----------------------------------------------------------------------------------------
     # Tratamento de Nós
     def NodeConnection(self):
-        thread = threading.Thread(target=self.startNetwork)
+        thread = threading.Thread(target=self.recieveNodeConnection)
         thread.start()
-        self.recieveNodeConnection()
+        self.startNetwork()
+        self.sendNodeConnection()
+        self.NetworkMaintenance()
 
-    # Metodo que cria uma interface grafica que permite ao RP construir a rede apos selecionar essa 
-    # opção indicada
-    # esta funcionalidade permite garantir que a rede so é estabelecida depois de todos os nodos estiverem ligados
-    # apos selecionada é enviada a mensagem de "Start Network" aos nodos vizinhos que iram fazer o mesmo para os seus
-    # vizinhos que depois iniciaram a construção da rede no sentido inverso
+    '''Metodo que cria uma interface grafica que permite ao RP construir a rede apos selecionar essa 
+    opção indicada. Esta funcionalidade permite garantir que a rede so é estabelecida depois de todos
+    os nodos estiverem ligados'''
     def startNetwork(self):
         self.janela = tk.Tk()
         self.janela.title(f'RendezvousPoint: {NodeData.getIp(self.node)}')
@@ -54,14 +58,23 @@ class RPGUI:
         self.botaoStart["command"] = self.startTest
         self.botaoStart.grid(row=1, column=0, padx=10, pady=10)
         self.janela.mainloop()
-
         with self.condition:
             while not self.conditionBool:
                 self.condition.wait()
         self.conditionBool = False
-
+    def startTest(self):
+        with self.condition:
+            self.conditionBool = True
+            self.condition.notify()
+        self.janela.destroy()
+    
+    '''Metodo responsavel por enviar a mensagem de "Update Network" aos nodos vizinhos que iram fazer o 
+    mesmo para que seja possivel iniciaram a construção da rede no sentido inverso'''
+    def sendNodeConnection(self):
+        print("RP asked for an update on the Network")
         try:
-            msg = "Start Network"
+            msg = f"Update Network-{self.networkUpdateNumber}"
+            self.networkUpdateNumber += 1
             msg_data = (
                 len(msg).to_bytes(4, 'big') +
                 msg.encode('utf-8')
@@ -77,24 +90,19 @@ class RPGUI:
                 finally:
                     node_starter_socket.close()
         except Exception as e:
-            print("Erro ao iniciar a rede overlay: ", e)
+            print("Erro ao testar a rede overlay: ", e)
         finally:
             node_starter_socket.close()
-
-    def startTest(self):
-        with self.condition:
-            self.conditionBool = True
-            self.condition.notify()
-        self.janela.destroy()
         
-    # Metodo responsavel por receber os caminhos provenientes de todos os nodos e inverte-os por virem 
-    # no sentido contrario e guarda essa informação construindo assim a rede overlay
+    '''Metodo responsavel por receber os caminhos provenientes de todos os nodos e inverte-os por virem 
+    no sentido contrario e guarda essa informação construindo assim a rede overlay 
+    é ainda atualizado o caminho mais curto para cada cliente segunda a metrica do metodo updateBestTrack'''
     def recieveNodeConnection(self):
         socket_address = (NodeData.getIp(self.node), NodeData.getNodePort(self.node))
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as node_socket:
                 node_socket.bind(socket_address)
-                node_socket.listen(1)
+                node_socket.listen()
                 print("RP waiting for Node connections: ", socket_address)
                 while True:
                     client_connection,_ = node_socket.accept()
@@ -105,17 +113,58 @@ class RPGUI:
                     msg_data = client_connection.recv(msg_size)
                     mensagem = msg_data.decode('utf-8')
                     
-                    if "Start Network" not in mensagem:
+                    if "Update Network" not in mensagem:
                         mensagem = mensagem + " <- " + NodeData.getIp(self.node)
                         cam = inverter_relacoes(mensagem)
                         print("New connection: ", cam)
-                        self.caminhos.append(cam)
-                        client_connection.close()
-
+                
+                        if ":clst-" in mensagem:
+                            caminho, cliente_st = getTrackAndTime(cam)
+                            self.caminhos.append(caminho)
+                            self.updateBestTrack(caminho, cliente_st)
+                        else:
+                            self.caminhos.append(cam)
+                    
+                    client_connection.close()
         except Exception as e:
             print(f"Erro na receção dos caminhos para os Nós no RP: ",e)
         finally:
             node_socket.close()
+
+    ''' Metodo onde a cada período fixo de segundos é efetuado um novo teste de conexão e após 
+    essa receção são avaliados os caminhos otimos para enviar um pacote para cada cliente'''
+    def NetworkMaintenance(self):
+        try:
+            while True:
+                time.sleep(MaintenanceTime)
+                self.sendNodeConnection()
+
+        except Exception as e:
+            print("Erro na manutenção da rede Overlay: ", e)
+
+    ''' Metodo que avalia se o novo caminho é o mais rapido para chegar ao cliente se sim atualiza-o
+    Se o cliente estiver a ver uma Transmissão essa alteração do melhor caminho é indicada e utilizada'''
+    def updateBestTrack(self, new_track, client_st):
+        try:
+            client_IP = getClientIP(new_track)
+            end_time = time.time()
+            elapsed_time = end_time - float(client_st)
+            
+            if not self.clientBestTrack.get(client_IP):
+                self.clientBestTrack[client_IP] = (elapsed_time, new_track)
+            else:
+                best_time, best_track = self.clientBestTrack[client_IP]
+                if elapsed_time < best_time:
+                    if new_track != best_track:
+                        # se o cliente estiver a assitir update stream que tem o cliente
+                        if self.clients_logged.get(client_IP):
+                            streamNameClientIsWatching = self.clients_logged[client_IP]
+                            stream = self.streamList[streamNameClientIsWatching]
+                            Stream.updateTrackToClientList(stream, client_IP, new_track)
+                    self.clientBestTrack[client_IP] = (elapsed_time, new_track)
+            print("Lista com os clientes e o caminho mais rapido atualizada: ", self.clientBestTrack)
+        except Exception as e:
+            print("Erro na atualização do melhor caminho para o cliente: ",e)
 
     #-----------------------------------------------------------------------------------------
     # Tratamento de Clientes
@@ -155,9 +204,9 @@ class RPGUI:
                     selectedStream = extrair_texto(recv_msg)
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
-                    melhor_caminho = Stream.getBestTrack(addr[0], self.caminhos)
+                    #melhor_caminho = Stream.getBestTrack(addr[0], self.caminhos)
                     
-                    Stream.addClient(stream, addr[0], melhor_caminho)
+                    Stream.addClient(stream, addr[0], self.clientBestTrack[addr[0]][1])
                     print(f"Client {addr} connected and watching Stream {selectedStream}")
 
             elif mensagem == "Connection closed":

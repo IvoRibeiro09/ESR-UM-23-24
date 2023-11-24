@@ -116,3 +116,18 @@ def extrair_conexoes(ip, ident, input_string):
 
 
 print(extrair_conexoes("127.0.0.7", "127.0.", lista_de_caminhos[0][1]))
+
+c = "127.0.0.1 -> 127.0.0.4 | 127.0.0.4 -> 127.0.0.6:clst-1700824252.1257617"
+def getTrackAndTime(caminho):
+    partes = caminho.split(":clst-")
+    return (partes[0], partes[1])
+
+print(getTrackAndTime(c))
+
+dict = {}
+
+dict["ola"] = (112, "alalalal")
+
+
+if not dict["kkk"] :
+    print("ei")

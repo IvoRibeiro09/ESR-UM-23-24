@@ -114,13 +114,6 @@ class Stream():
         except Exception as e:
             print("Erro ao remover o caminho para o cliente que deu dsiconnect: ", e)
 
-    # Metodo que devolve o melhor caminho para chegar a um nodo
-    def getBestTrack(ip, lista):
-        for t in lista:
-            if ip in t:
-                return t
-        return None
-
     # Metodo que atualiza a mensagem a adicionar aos pacotes e o vizinho para onde enviar o primeiro pacote
     # self.trackToSendList = (ip do vizinho para onde enviar , resto do caminho ate ao cliente)
     # para diminuir a complexidade um caminho que era "10.0.1.2 -> 10.0.3.2 | 10.0.3.2 -> 10.0.4.2,10.0.0.5"
@@ -159,6 +152,20 @@ class Stream():
                 trackToPacket = trackToPacket[:-1]
                 newTrackList.append((inic[1],trackToPacket))
             self.trackToSendList = newTrackList
-            print("Lista de caminhos a enviar atualizada para: ", self.trackToSendList)
         except Exception as e:
             print("Erro no update da lista de caminhos a adicionar aos pacotes: ", e)
+        finally:
+            print(f"Stream: {self.name} vai ser enviada para os nodos:")
+            for i in self.trackToSendList:
+                print(f"\tVizinho: {i[0]} com: {i[1]} como mensagem")
+
+    def updateTrackToClientList(self, client_IP, new_track):
+        try:
+            for t in self.trackToClientesList:
+                if client_IP in t:
+                    self.trackToClientesList.remove(t)
+                    self.trackToClientesList.append(new_track)
+                    self.updateTrackToSendList()
+                    break
+        except Exception as e:
+            print("Erro ao atualizar a lista de clientes na stream: ",e)

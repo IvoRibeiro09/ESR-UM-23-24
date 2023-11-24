@@ -93,27 +93,32 @@ portaServer- 12346
 ------
 ip- 127.0.0.3
 type- Node
-neighbour- 127.0.0.5
+neighbour- 127.0.0.4
 neighbour- 127.0.0.1
 ------
 ip- 127.0.0.4
 type- Node
-neighbour- 127.0.0.1
+neighbour- 127.0.0.3
 neighbour- 127.0.0.5
-neighbour- 127.0.0.6
-neighbour- 127.0.0.7
 ------
 ip- 127.0.0.5
 type- Node
-neighbour- 127.0.0.3
 neighbour- 127.0.0.4
+neighbour- 127.0.0.6
+neighbour- 127.0.0.7
+neighbour- 127.0.0.8
 ------
 ip- 127.0.0.6
-type- Client
-neighbour- 127.0.0.4
-rp- 127.0.0.1 - 12345
+type- Node
+neighbour- 127.0.0.1
+neighbour- 127.0.0.5
 ------
 ip- 127.0.0.7
 type- Client
-neighbour- 127.0.0.4
+neighbour- 127.0.0.5
+rp- 127.0.0.1 - 12345
+------
+ip- 127.0.0.8
+type- Client
+neighbour- 127.0.0.5
 rp- 127.0.0.1 - 12345
