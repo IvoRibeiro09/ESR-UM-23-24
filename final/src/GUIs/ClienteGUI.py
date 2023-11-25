@@ -11,6 +11,9 @@ Esta é a classe principal para o Cliente
 class ClienteGUI:
     def __init__(self, node):
         self.node = node
+        # Criar a janela
+        self.janela = None
+        self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
         self.my_address = (NodeData.getIp(self.node), 0)
         self.selected = None
         self.condition = threading.Condition()
@@ -40,11 +43,11 @@ class ClienteGUI:
         
                 # Perguntar ao RP quais as Streams que ele tem acesso
                 message = "VideoList"
-                rp_socket.sendall((message).encode())
+                rp_socket.sendall((message).encode('utf-8'))
                 
                 # Receber a lista de streams do RP
                 data = rp_socket.recv(1024)
-                mensagem = data.decode()
+                mensagem = data.decode('utf-8')
                 vids = mensagem.split("/")
                 vids.pop()
                 # Selecionar a transmissão
@@ -52,7 +55,7 @@ class ClienteGUI:
 
                 # Enviar a escolha para o RP
                 mensagem = f"Stream- {self.selected}"
-                rp_socket.sendall((mensagem).encode())
+                rp_socket.sendall((mensagem).encode('utf-8'))
                 
                 print("Pedido de quais videos exixtem no RP recebido")
         except Exception as e:
@@ -71,39 +74,31 @@ class ClienteGUI:
             while not self.conditionBool:
                 self.condition.wait()
         self.conditionBool = False
+        
 
     # Interface gráfica
     def clienteInterface(self, streamList):
-        # Criar a janela
-        self.janela = tk.Tk()
-        self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
-        self.janela.geometry("+1000+50")
-        
         i = 0
         spacing = 10
         for stream in streamList:
-            # mostrar nome da stream
-            self.label = tk.Label(self.janela, width=60, padx=spacing, pady=spacing)
-            self.label["text"] = f"{stream}"
-            self.label.grid(row=i, column=0, padx=spacing, pady=spacing)
+            label = tk.Label(self.janela, width=60, padx=spacing, pady=spacing, text=f"{stream}")
+            label.grid(row=i, column=0, padx=spacing, pady=spacing)
 
-            # Botao para selecionar a stream 		
-            self.botaoStart = tk.Button(self.janela, width=30, padx=spacing, pady=spacing)
-            self.botaoStart["text"] = "Select"
-            self.botaoStart["command"] = lambda s=stream: self.selectStream(s)
-            self.botaoStart.grid(row=i, column=1, padx=spacing, pady=spacing)
-            i+=1
+            botao_start = tk.Button(self.janela, width=30, padx=spacing, pady=spacing, text="Select",
+                                    command=lambda s=stream: self.selectStream(s))
+            botao_start.grid(row=i, column=1, padx=spacing, pady=spacing)
+            i += 1
+
         self.janela.mainloop()
         
     # metodo que garante a seleção de uma stream
     def selectStream(self, video):
-        # Destroir a janela
-        self.janela.destroy()
         with self.condition:
             # Notificar que o cliente ja selecionou uma stream
             self.selected = video
             self.conditionBool = True
             self.condition.notify()
+           
         print(f"{video} has been selected...")
     
     '''
@@ -113,10 +108,7 @@ class ClienteGUI:
     utilizamos metricas de controlo de perda de pacotes na receção dos mesmos
     '''
     def recievestreamTransmission(self):
-        # Criar a janela
-        self.janela = tk.Tk()
-        self.janela.title(f"Cliente {NodeData.getIp(self.node)}")
-        self.janela.geometry("+1000+50")
+        
         
         # tela de display de video
         self.label = tk.Label(self.janela, width=640, height=480, bg='white')
@@ -143,7 +135,7 @@ class ClienteGUI:
                 while self.status != "Closed":
                     # A cada iteração recebemos três pacotes que sao serializados e caso o cliente estiver a
                     # visualizar em tempo reasão, não em estado pausa, adicionados a uma lista de pacotes
-                    for i in range(3):
+                    for i in range(2):
                         data, _ = socketForStream.recvfrom(Packet_size)
                         pacote = Packet("", "", "")
                         Packet.parsePacket(pacote, data)

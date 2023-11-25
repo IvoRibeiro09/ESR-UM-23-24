@@ -198,19 +198,19 @@ class RPGUI:
     # e avisa ainda o servidor no caso de não exitir nenhum cliente a assistir 
     def initialClientConn(self, conn, addr):
         try:
-            mensagem = conn.recv(1024).decode()
+            mensagem = conn.recv(1024).decode('utf-8')
 
             if mensagem == "VideoList":
                 if not self.streamList:
                     noVidmsg = "I DONT HAVE STREAMS"
-                    conn.sendall(noVidmsg.encode())
+                    conn.sendall(noVidmsg.encode('utf-8'))
                 else:
                     msg = ""
                     for stream in self.streamList.keys():
                         msg += stream+"/"    
-                    conn.sendall(msg.encode())
+                    conn.sendall(msg.encode('utf-8'))
             
-                    recv_msg = conn.recv(1024).decode()
+                    recv_msg = conn.recv(1024).decode('utf-8')
                     selectedStream = extrair_texto(recv_msg)
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream

@@ -116,20 +116,17 @@ class ServerGUI:
                     
                     # Obtenha o comprimento total dos dados e dicidir por 3 partes identicas
                     total_length = len(frame_data)
-                    split_point1 = total_length // 3
-                    split_point2 = 2 * total_length // 3
+                    split_point1 = total_length // 2
+                    
                     data_part1 = frame_data[:split_point1]
-                    data_part2 = frame_data[split_point1:split_point2]
-                    data_part3 = frame_data[split_point2:]
+                    data_part2 = frame_data[split_point1:]
+                    
                     
                     # Construir os 3 pacotes e envia-los para o RP
                     pacote = Packet(streamName, i, data_part1)
                     pacote_data = pacote.buildPacket()
                     stream_socket.sendto(pacote_data, rp_address)
                     pacote = Packet(streamName, i, data_part2)
-                    pacote_data = pacote.buildPacket()
-                    stream_socket.sendto(pacote_data, rp_address)
-                    pacote = Packet(streamName, i, data_part3)
                     pacote_data = pacote.buildPacket()
                     stream_socket.sendto(pacote_data, rp_address)
                     
@@ -143,7 +140,8 @@ class ServerGUI:
                     i+=1
                 # Controlo quando o video acaba e consequentemente termina a Stream
                 if self.streamList[streamName] == "Streaming":
-                    self.closeStream(streamName)
+                    self.streamList[streamName] = "Asked"
+                    self.startStream()
 
             except Exception as e:
                 print(f"Erro ao Streamar para o RP: {e}")
