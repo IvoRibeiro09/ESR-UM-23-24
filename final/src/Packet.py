@@ -1,6 +1,6 @@
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
-Packet_size = 60000 
+FRAME_WIDTH = 480
+FRAME_HEIGHT = 320
+Packet_size = 62000 
 
 '''
 Classe que define o pacote que onde a informação sobre os frames é passada 

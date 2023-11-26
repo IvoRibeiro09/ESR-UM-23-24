@@ -114,15 +114,14 @@ class ServerGUI:
                     Frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
                     frame_data = cv2.imencode('.jpg', Frame)[1].tobytes()
                     
-                    # Obtenha o comprimento total dos dados e dicidir por 3 partes identicas
+                    # Obtenha o comprimento total dos dados e dicidir por 2 partes identicas
                     total_length = len(frame_data)
                     split_point1 = total_length // 2
                     
                     data_part1 = frame_data[:split_point1]
                     data_part2 = frame_data[split_point1:]
-                    
-                    
-                    # Construir os 3 pacotes e envia-los para o RP
+                   
+                    # Construir os 2 pacotes e envia-los para o RP
                     pacote = Packet(streamName, i, data_part1)
                     pacote_data = pacote.buildPacket()
                     stream_socket.sendto(pacote_data, rp_address)
@@ -134,7 +133,6 @@ class ServerGUI:
                     elapsed_time = time.time() - st
                     time.sleep(max(0, frame_interval - elapsed_time))
                     st = time.time()
-
 
                     #print("Frame: ",i)
                     i+=1

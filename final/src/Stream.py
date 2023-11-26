@@ -103,7 +103,7 @@ class Stream():
             self.updateTrackToSendList()
             # avisar o Server para parar de stremar
             if self.status == "Closed":
-                print(self.server_address)
+                #print(self.server_address)
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as socket_server:
                     socket_server.connect(self.server_address)
 

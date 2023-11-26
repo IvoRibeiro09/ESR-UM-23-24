@@ -51,9 +51,9 @@ def invert_ip_addresses(address_string):
 
 # Metodo que devolve a lista de nodos vizinhos para quem tem de enviar o pacote
 def extrair_conexoes(ip, ident, input_string):
-    ip_terminação = f"{ip.split('.')[-2]}.{ip.split('.')[-1]}"
-    send_list = []
     try:
+        ip_terminação = f"{ip.split('.')[-2]}.{ip.split('.')[-1]}"
+        send_list = []
         if "|" in input_string:
             partes = input_string.split('|')
             for p in partes:

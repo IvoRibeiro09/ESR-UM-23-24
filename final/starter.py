@@ -6,6 +6,7 @@ from src.GUIs.RPGUI import RPGUI
 from src.GUIs.ClienteGUI import ClienteGUI
 from src.GUIs.ServerGUI import ServerGUI
 import os
+import tkinter as tk
 
 '''
 Este é o metodo que é executado e apenas é necessario indicar qual o ip da estrutura em questao
@@ -29,7 +30,9 @@ if __name__ == "__main__":
             if nodedata.getType() == "Client":
                 sleep(5)
                 os.environ["DISPLAY"] = ":0.0"
-                cliente = ClienteGUI(nodedata)
+                janela = tk.Tk()
+                cliente = ClienteGUI(janela, nodedata)
+                janela.mainloop()
             elif nodedata.getType() == "Server":
                 sleep(3)
                 servidor = ServerGUI(nodedata)
