@@ -120,37 +120,22 @@ class Stream():
     # fica representado como "1.2:3.2|3.2:4.2,0.5"
     def updateTrackToSendList(self):
         try:
-            # Ver se é possivel unificar os caminhos para os varios clientes e atualizar os 
-            # os caminhos para enviar 
-            caminhos_unificados = []
+            caminhos_unificado = caminho_combinado(self.trackToClientesList)
+            print(f"\nCaminho Unificado: {caminhos_unificado}\n\n")
+            pares = extrair_pares(caminhos_unificado)
+            inic = pares.pop(0)
+
             newTrackList = []
-            for caminho in self.trackToClientesList:
-                if caminhos_unificados == []:
-                    caminhos_unificados.append(caminho)
-                else:
-                    for caminho2 in caminhos_unificados:
-                        if possibelToMerge(caminho, caminho2):
-                            caminhos_unificados.remove(caminho2)
-                            c = combinar_caminhos(caminho, caminho2)
-                            caminhos_unificados.append(c)
-                        else:
-                            caminhos_unificados.append(caminho)
-            for c in caminhos_unificados:
-                pares = extrair_pares(c)
-                inic = pares.pop(0)
-                trackToPacket = ""
-                for p in pares:
-                    trackToPacket += f"{p[0].split('.')[-2]}.{p[0].split('.')[-1]}:"
-                    if "," in p[1]:
-                        ips = p[1].split(",")
-                        for i in ips:
-                            trackToPacket += f"{i.split('.')[-2]}.{i.split('.')[-1]},"
-                        trackToPacket = trackToPacket[:-1]
-                    else:
-                        trackToPacket += f"{p[1].split('.')[-2]}.{p[1].split('.')[-1]}"
-                    trackToPacket += "|"
-                trackToPacket = trackToPacket[:-1]
-                newTrackList.append((inic[1],trackToPacket))
+            trackToPacket = ""
+            for p in pares:
+                trackToPacket += f"{p[0].split('.')[-2]}.{p[0].split('.')[-1]}:"
+                ips = p[1].split(",") if "," in p[1] else [p[1]]
+                trackToPacket += ",".join([f"{i.split('.')[-2]}.{i.split('.')[-1]}" for i in ips])
+                trackToPacket += "|"
+            trackToPacket = trackToPacket[:-1]
+
+            ips = inic[1].split(",") if "," in inic[1] else [inic[1]]
+            newTrackList.extend([(i, trackToPacket) for i in ips])
             self.trackToSendList = newTrackList
         except Exception as e:
             print("Erro no update da lista de caminhos a adicionar aos pacotes: ", e)

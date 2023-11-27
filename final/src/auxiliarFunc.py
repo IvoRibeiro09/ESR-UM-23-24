@@ -78,16 +78,6 @@ def extrair_conexoes(ip, ident, input_string):
     except Exception as e:
         print("Erro ao criar a lista de tuplos",e)
     
-# Metodo que verifica se dois caminhos podem ser unficados 
-def possibelToMerge(caminho, caminho2):
-    pares_str1 = extrair_pares(caminho)
-    pares_str2 = extrair_pares(caminho2)
-    for par1 in pares_str1:
-        for par2 in pares_str2:
-            if par1 == par2:
-                return True
-    return False  
-
 # Metodo auxiliar que separa as conexões em pares
 def extrair_pares(input_string):
         if "|" in input_string:
@@ -97,28 +87,20 @@ def extrair_pares(input_string):
             return [tuple(input_string.split(" -> "))]
 
 # Metodo que combina os dois caminhos que podem ser unificados num só caminho
-def combinar_caminhos(caminho1, caminho2):
-    pares_str1 = extrair_pares(caminho1)
-    pares_str2 = extrair_pares(caminho2)
+def caminho_combinado(lista):
     conexoes_dict = {}
-    for par in pares_str1:
-        if par[0] not in conexoes_dict:
-            conexoes_dict[par[0]] = par[1]
-        if par[1] not in conexoes_dict[par[0]]:
-            aux = conexoes_dict[par[0]]
-            conexoes_dict[par[0]] = aux + "," + par[1] 
-
-    for par in pares_str2:
-        if par[0] not in conexoes_dict:
-            conexoes_dict[par[0]] = par[1]
-        if par[1] not in conexoes_dict[par[0]]:
-            aux = conexoes_dict[par[0]]
-            conexoes_dict[par[0]] = aux + "," + par[1] 
-
-    partes = []
-    for inicio, fins in conexoes_dict.items():
-        partes.append(f"{inicio} -> {fins}")
-    return ' | '.join(partes)
+    ends = []
+    for caminho in lista:
+        pares_str1 = extrair_pares(caminho)
+        for pares in pares_str1:
+            if not conexoes_dict.get(pares[0]):
+                conexoes_dict[pares[0]] = pares[1]
+                ends.append(pares[1])
+            else:
+                p = conexoes_dict[pares[0]] 
+                if pares[1] not in p and pares[1] not in ends:
+                    conexoes_dict[pares[0]] = f"{p},{pares[1]}"
+                    ends.append(pares[1])
 
 # Metodo que separa o caminho do timestamp de um caminho enviado por um cliente
 def getTrackAndTimeAndUpdateNumber(caminho):
