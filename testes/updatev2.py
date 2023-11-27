@@ -1,19 +1,17 @@
-c = "10.0.8.2 -> 10.0.1.1 | 10.0.1.1 -> 10.0.0.21"
-c1 = "10.0.8.2 -> 10.0.13.2 | 10.0.13.2 -> 10.0.11.2 | 10.0.11.2 -> 10.0.20.21"
-c2 = "10.0.8.2 -> 10.0.13.2 | 10.0.13.2 -> 10.0.11.2 | 10.0.11.2 -> 10.0.1.1 | 10.0.1.1 -> 10.0.0.20"
 
-cs = []
-cs.append(c)
-cs.append(c1)
-cs.append(c2) 
 
 def updateTrackToSendList(caminhos):
-    caminhos_unificado = caminho_combinado(caminhos)
+    newTrackList = []
+    if len(caminhos) == 0:
+        return newTrackList
+    elif len(caminhos) == 1:
+        caminhos_unificado = caminhos[0]
+    else:
+        caminhos_unificado = caminho_combinado(caminhos)
     print(f"\nCaminho Unificado: {caminhos_unificado}\n\n")
     pares = extrair_pares(caminhos_unificado)
     inic = pares.pop(0)
 
-    newTrackList = []
     trackToPacket = ""
     for p in pares:
         trackToPacket += f"{p[0].split('.')[-2]}.{p[0].split('.')[-1]}:"
@@ -53,4 +51,16 @@ def caminho_combinado(lista):
         partes.append(f"{inicio} -> {fins}")
     return ' | '.join(partes)
 
+c = "10.0.8.2 -> 10.0.1.1 | 10.0.1.1 -> 10.0.0.21"
+c1 = "10.0.8.2 -> 10.0.21.19"
+#c1 = "10.0.8.2 -> 10.0.13.2 | 10.0.13.2 -> 10.0.11.2 | 10.0.11.2 -> 10.0.20.21"
+c2 = "10.0.8.2 -> 10.0.13.2 | 10.0.13.2 -> 10.0.11.2 | 10.0.11.2 -> 10.0.1.1 | 10.0.1.1 -> 10.0.0.20"
+
+cs = []
+print(updateTrackToSendList(cs))
+cs.append(c)
+print(updateTrackToSendList(cs))
+cs.append(c1)
+print(updateTrackToSendList(cs))
+cs.append(c2) 
 print(updateTrackToSendList(cs))

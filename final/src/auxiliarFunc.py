@@ -101,6 +101,10 @@ def caminho_combinado(lista):
                 if pares[1] not in p and pares[1] not in ends:
                     conexoes_dict[pares[0]] = f"{p},{pares[1]}"
                     ends.append(pares[1])
+    partes = []
+    for inicio, fins in conexoes_dict.items():
+        partes.append(f"{inicio} -> {fins}")
+    return ' | '.join(partes)
 
 # Metodo que separa o caminho do timestamp de um caminho enviado por um cliente
 def getTrackAndTimeAndUpdateNumber(caminho):

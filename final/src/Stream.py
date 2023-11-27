@@ -43,7 +43,7 @@ class Stream():
                 self.trackToClientesList.append(melhor_caminho)
 
                 # atualizar a lista de caminhos para envio
-                self.updateTrackToSendList()
+                self.trackToSendList = self.updateTrackToSendList()
                 
                 # Notificar o servidor que pode enviar esta stream que pode começar a enviar
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
@@ -68,7 +68,7 @@ class Stream():
                 self.trackToClientesList.append(melhor_caminho)
 
                 # atualizar a lista de caminhos para envio
-                self.updateTrackToSendList()
+                self.trackToSendList = self.updateTrackToSendList()
             except Exception as e:
                 print(f"Erro na adição do cliente a stream ja aberta: {e}")
 
@@ -100,7 +100,7 @@ class Stream():
                     self.trackToClientesList.remove(t)
                     if self.trackToClientesList == []: self.status = "Closed"
                     break
-            self.updateTrackToSendList()
+            self.trackToClientesList = self.updateTrackToSendList()
             # avisar o Server para parar de stremar
             if self.status == "Closed":
                 #print(self.server_address)
@@ -120,12 +120,17 @@ class Stream():
     # fica representado como "1.2:3.2|3.2:4.2,0.5"
     def updateTrackToSendList(self):
         try:
-            caminhos_unificado = caminho_combinado(self.trackToClientesList)
+            newTrackList = []
+            if len(self.trackToClientesList) == 0:
+                return newTrackList
+            elif len(self.trackToClientesList) == 1:
+                caminhos_unificado = self.trackToClientesList[0]
+            else:
+                caminhos_unificado = caminho_combinado(self.trackToClientesList)
             print(f"\nCaminho Unificado: {caminhos_unificado}\n\n")
             pares = extrair_pares(caminhos_unificado)
             inic = pares.pop(0)
 
-            newTrackList = []
             trackToPacket = ""
             for p in pares:
                 trackToPacket += f"{p[0].split('.')[-2]}.{p[0].split('.')[-1]}:"
@@ -136,7 +141,7 @@ class Stream():
 
             ips = inic[1].split(",") if "," in inic[1] else [inic[1]]
             newTrackList.extend([(i, trackToPacket) for i in ips])
-            self.trackToSendList = newTrackList
+            return newTrackList
         except Exception as e:
             print("Erro no update da lista de caminhos a adicionar aos pacotes: ", e)
         finally:
@@ -150,7 +155,7 @@ class Stream():
                 if client_IP in t:
                     self.trackToClientesList.remove(t)
                     self.trackToClientesList.append(new_track)
-                    self.updateTrackToSendList()
+                    self.trackToSendList = self.updateTrackToSendList()
                     break
         except Exception as e:
             print("Erro ao atualizar a lista de clientes na stream: ",e)
