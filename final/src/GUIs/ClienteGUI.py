@@ -127,7 +127,7 @@ class ClienteGUI:
                     # visualizar em tempo reasão, não em estado pausa, adicionados a uma lista de pacotes
                     for i in range(2):
                         data, _ = socketForStream.recvfrom(Packet_size)
-                        pacote = Packet("", "", "")
+                        pacote = Packet("", "", "", "")
                         Packet.parsePacket(pacote, data)
                         if self.status == "Playing": 
                             self.packetQueue.append(pacote)
@@ -184,7 +184,7 @@ class ClienteGUI:
             pack1 = self.packetQueue[0]
             pack2 = self.packetQueue[1]
             # se sim juntar e devolver o frame
-            if Packet.getFrameNumber(pack1) == Packet.getFrameNumber(pack2):
+            if Packet.getFrameNumber(pack1) == Packet.getFrameNumber(pack2) and Packet.getFramePart(pack1) != Packet.getFramePart(pack2):
                 self.packetQueue.pop(0)
                 self.packetQueue.pop(0)
                 return Packet.getFrame(pack1) + Packet.getFrame(pack2)

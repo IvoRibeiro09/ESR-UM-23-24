@@ -25,7 +25,7 @@ class NodeGUI:
                     data, _ = socketForStream.recvfrom(Packet_size)
                     i+=1
                     
-                    pck = Packet("","", "")
+                    pck = Packet("", "", "", "")
                     pck.parsePacket(data)
                     caminhos = extrair_conexoes(NodeData.getIp(self.node), NodeData.getIdent(self.node), pck.info)
                    

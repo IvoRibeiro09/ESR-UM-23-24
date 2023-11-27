@@ -74,13 +74,13 @@ class Stream():
 
     # Metodo que envia a Stream para os vizinhos necessarios reestroturando o pacote com os dados
     # relativos as conexões e direções para onde o pacote tem de ser enviado
-    def sendStream(self, frameNumber, frame):
+    def sendStream(self, frameNumber, framepart, frame):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as stream_socket:
                 try:
                     for track in self.trackToSendList:
                         # Criar o pacote com o caminho ate os cliente
-                        pck = Packet(track[1], frameNumber, frame)
+                        pck = Packet(track[1], frameNumber, framepart, frame)
                         dataToSend = pck.buildPacket()
                         send_address = (track[0], self.nodePort)
                         
@@ -169,3 +169,7 @@ class Stream():
                     break
         except Exception as e:
             print("Erro ao atualizar a lista de clientes na stream: ",e)
+        finally:
+            print(f"Lista de clientes que vão receber a Stream {self.name} alterada")
+            for i in self.trackToClientesList:
+                print(f"\tCliente: {i}") 

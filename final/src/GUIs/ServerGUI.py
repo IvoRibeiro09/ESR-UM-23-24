@@ -122,10 +122,10 @@ class ServerGUI:
                     data_part2 = frame_data[split_point1:]
                    
                     # Construir os 2 pacotes e envia-los para o RP
-                    pacote = Packet(streamName, i, data_part1)
+                    pacote = Packet(streamName, i, 1, data_part1)
                     pacote_data = pacote.buildPacket()
                     stream_socket.sendto(pacote_data, rp_address)
-                    pacote = Packet(streamName, i, data_part2)
+                    pacote = Packet(streamName, i, 2, data_part2)
                     pacote_data = pacote.buildPacket()
                     stream_socket.sendto(pacote_data, rp_address)
                     

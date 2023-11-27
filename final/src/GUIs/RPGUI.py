@@ -285,11 +285,11 @@ class RPGUI:
                     data, _ = socketForStream.recvfrom(Packet_size)
                     
                     # Parse the packet using your Packet class
-                    received_packet = Packet("", "", "")
+                    received_packet = Packet("", "", "", "")
                     received_packet.parsePacket(data)
                     stream = self.streamList[received_packet.info]
                     
-                    Stream.sendStream(stream, received_packet.frameNumber, received_packet.frame)
+                    Stream.sendStream(stream, received_packet.frameNumber, received_packet.framePart, received_packet.frame)
             except Exception as e:
                 print(f"Error in streamConnection: {e}")
             finally:
