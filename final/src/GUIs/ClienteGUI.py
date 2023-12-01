@@ -194,8 +194,7 @@ class ClienteGUI:
                 self.verifyFrame()
         else:
             return None
-
-            
+       
     '''
     Metodos usados para garantir a funcionalidade dos butões na interface gráfica
     '''
@@ -229,7 +228,7 @@ class ClienteGUI:
             self.rp_socket.connect(NodeData.getRPAddress(self.node))
             
             message = "Connection closed"
-            self.rp_socket.sendall((message).encode())
+            self.rp_socket.sendall((message).encode('utf-8'))
             
             print('The Client informed the RP that he no longer intends to receive the stream.')
         except Exception as e:

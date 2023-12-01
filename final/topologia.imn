@@ -22,8 +22,8 @@ node n1 {
 	!
     }
     canvas c1
-    iconcoords {175.0 424.0}
-    labelcoords {175.0 456.0}
+    iconcoords {174.0 424.0}
+    labelcoords {174.0 456.0}
     interface-peer {eth0 n2}
     interface-peer {eth1 n3}
     interface-peer {eth2 n4}
@@ -54,8 +54,8 @@ node n2 {
 	!
     }
     canvas c1
-    iconcoords {438.0 213.0}
-    labelcoords {438.0 245.0}
+    iconcoords {439.0 215.0}
+    labelcoords {439.0 247.0}
     interface-peer {eth0 n11}
     interface-peer {eth1 n1}
     interface-peer {eth2 n4}
@@ -223,8 +223,8 @@ node n7 {
 	!
     }
     canvas c1
-    iconcoords {943.0 683.0}
-    labelcoords {943.0 715.0}
+    iconcoords {941.0 674.0}
+    labelcoords {941.0 706.0}
     interface-peer {eth0 n4}
     interface-peer {eth1 n6}
     interface-peer {eth2 n8}
@@ -412,8 +412,8 @@ node n17 {
 	!
     }
     canvas c1
-    iconcoords {339.0 100.0}
-    labelcoords {339.0 132.0}
+    iconcoords {341.0 101.0}
+    labelcoords {341.0 133.0}
     interface-peer {eth0 n11}
 }
 
@@ -429,8 +429,8 @@ node n18 {
 	!
     }
     canvas c1
-    iconcoords {94.0 262.0}
-    labelcoords {94.0 294.0}
+    iconcoords {95.0 261.0}
+    labelcoords {95.0 293.0}
     interface-peer {eth0 n11}
 }
 
@@ -446,8 +446,8 @@ node n19 {
 	!
     }
     canvas c1
-    iconcoords {52.0 627.0}
-    labelcoords {52.0 659.0}
+    iconcoords {50.0 626.0}
+    labelcoords {50.0 658.0}
     interface-peer {eth0 n12}
 }
 
@@ -849,7 +849,7 @@ annotation a11 {
     label {}
     labelcolor black
     fontfamily {Arial}
-    fontsize 12
+    fontsize {12}
     color #cf6639
     width 0
     border black
@@ -862,7 +862,7 @@ annotation a12 {
     label {10.0.11.2}
     labelcolor black
     fontfamily {Arial}
-    fontsize 18
+    fontsize {18}
     canvas c1
 }
 
@@ -886,7 +886,7 @@ annotation a15 {
     label {10.0.8.2}
     labelcolor black
     fontfamily {Arial}
-    fontsize 18
+    fontsize {18}
     canvas c1
 }
 
@@ -896,7 +896,7 @@ annotation a16 {
     label {10.0.13.2}
     labelcolor black
     fontfamily {Arial}
-    fontsize 18
+    fontsize {18}
     canvas c1
 }
 
@@ -906,7 +906,7 @@ annotation a17 {
     label {10.0.1.1}
     labelcolor black
     fontfamily {Arial}
-    fontsize 18
+    fontsize {18}
     canvas c1
 }
 
@@ -916,7 +916,7 @@ annotation a18 {
     label {10.0.2.1}
     labelcolor black
     fontfamily {Arial}
-    fontsize 18
+    fontsize {18}
     canvas c1
 }
 

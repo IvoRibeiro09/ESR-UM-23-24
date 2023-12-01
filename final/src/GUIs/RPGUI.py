@@ -214,7 +214,6 @@ class RPGUI:
                     selectedStream = extrair_texto(recv_msg)
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
-                    #melhor_caminho = Stream.getBestTrack(addr[0], self.caminhos)
                     
                     Stream.addClient(stream, addr[0], self.clientBestTrack[addr[0]][0])
                     print(f"Client {addr} connected and watching Stream {selectedStream}")
@@ -225,7 +224,7 @@ class RPGUI:
                 Stream.rmvClient(stream, addr[0])
             
                 del self.clients_logged[addr[0]]
-                print(f"Client {addr[0]} disconnected.")
+                print(f"Client {addr[0]} disconnected from {stream.name}.")
 
         except Exception as e:
             print(f"Erro no processamento do cliente {addr[0]}: {e}")
@@ -257,7 +256,10 @@ class RPGUI:
             # receber mensagens com a lista das streams
             data = conn.recv(1024)
             mensagem = data.decode('utf-8')
-            lista_de_videos = mensagem.split('-AND-')
+            if "-AND-" in mensagem:
+                lista_de_videos = mensagem.split('-AND-')
+            else:
+                lista_de_videos = [mensagem]
             
             # Cria uma Stream por transmissao de cada servidor
             for videoname in lista_de_videos:

@@ -34,6 +34,7 @@ class ServerGUI:
                     msg += f"{stream}-AND-"
 
                 msg = msg[:-5] 
+                print(msg)
                 data = msg.encode('utf-8')
                 rp_socket.sendall(data)
 
