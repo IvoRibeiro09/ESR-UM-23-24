@@ -167,7 +167,7 @@ class RPGUI:
                 if current_track != new_track and Updated and self.clients_logged.get(client_IP):
                     streamNameClientIsWatching = self.clients_logged[client_IP]
                     stream = self.streamList[streamNameClientIsWatching]
-                    Stream.updateTrackToClientList(stream, client_IP, new_track) 
+                    StreamController.updateTrackToClientList(stream, client_IP, new_track) 
         except Exception as e:
             print("Erro na atualização do melhor caminho para o cliente: ",e)
         finally:
@@ -215,13 +215,13 @@ class RPGUI:
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
                     
-                    Stream.addClient(stream, addr[0], self.clientBestTrack[addr[0]][0])
+                    StreamController.addClient(stream, addr[0], self.clientBestTrack[addr[0]][0])
                     print(f"Client {addr} connected and watching Stream {selectedStream}")
 
             elif mensagem == "Connection closed":
                 stream_do_cliente = self.clients_logged[addr[0]]
                 stream = self.streamList[stream_do_cliente]
-                Stream.rmvClient(stream, addr[0])
+                StreamController.rmvClient(stream, addr[0])
             
                 del self.clients_logged[addr[0]]
                 print(f"Client {addr[0]} disconnected from {stream.name}.")
@@ -263,7 +263,7 @@ class RPGUI:
             
             # Cria uma Stream por transmissao de cada servidor
             for videoname in lista_de_videos:
-                stream = Stream(videoname, NodeData.getStreamPort(self.node), (addr[0],NodeData.getPortaServer(self.node)))
+                stream = StreamController(videoname, NodeData.getStreamPort(self.node), (addr[0],NodeData.getPortaServer(self.node)))
                 self.streamList[stream.name] = stream
             
             print(f'Stream list updated with: {lista_de_videos}')
@@ -291,7 +291,7 @@ class RPGUI:
                     received_packet.parsePacket(data)
                     stream = self.streamList[received_packet.info]
                     
-                    Stream.sendStream(stream, received_packet.frameNumber, received_packet.framePart, received_packet.frame)
+                    StreamController.sendStream(stream, received_packet.frameNumber, received_packet.framePart, received_packet.frame)
             except Exception as e:
                 print(f"Error in streamConnection: {e}")
             finally:

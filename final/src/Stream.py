@@ -8,7 +8,7 @@ Esta é a classe Stream implementada para auxiliar o RP a gerenciar as Streams n
 a receber e enviar dados, e gerenciar para quem continuar a mandar assim como o caminho 
 por onde a informação tem de passar
 '''
-class Stream():
+class StreamController():
     def __init__(self, name, nodePort, server):
         self.name = name
         self.nodePort = nodePort
