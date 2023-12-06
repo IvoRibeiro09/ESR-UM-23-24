@@ -43,12 +43,20 @@ class ClienteGUI:
                 rp_socket.connect(NodeData.getRPAddress(self.node))
         
                 # Perguntar ao RP quais as Streams que ele tem acesso
-                message = "VideoList"
-                rp_socket.sendall((message).encode('utf-8'))
+                data = ("VideoList").encode('utf-8')
+                dataToSend = (
+                    len(data).to_bytes(4, 'big') +
+                    data
+                )
+                rp_socket.sendall(dataToSend)
                 
                 # Receber a lista de streams do RP
-                data = rp_socket.recv(1024)
-                mensagem = data.decode('utf-8')
+                size = rp_socket.recv(4)
+                msg_size = int.from_bytes(size, byteorder='big')
+
+                msg_data = rp_socket.recv(msg_size)
+                mensagem = msg_data.decode('utf-8')
+
                 vids = mensagem.split("/")
                 vids.pop()
                 # Selecionar a transmissão
@@ -228,7 +236,12 @@ class ClienteGUI:
             self.rp_socket.connect(NodeData.getRPAddress(self.node))
             
             message = "Connection closed"
-            self.rp_socket.sendall((message).encode('utf-8'))
+            data = message.encode('utf-8')
+            dataToSend = (
+                len(data).to_bytes(4, 'big') +
+                data
+            )
+            self.rp_socket.sendall(dataToSend)
             
             print('The Client informed the RP that he no longer intends to receive the stream.')
         except Exception as e:

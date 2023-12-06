@@ -34,14 +34,17 @@ class ServerGUI:
                     msg += f"{stream}-AND-"
 
                 msg = msg[:-5] 
-                print(msg)
                 data = msg.encode('utf-8')
-                rp_socket.sendall(data)
+                dataToSend = (
+                    len(data).to_bytes(4, 'big') +
+                    data
+                )
+                rp_socket.sendall(dataToSend)
 
-                print("Server conected to RP")
             except Exception as e:
                 print(f"Erro ao conectar ou enviar mensagens: {e}")
             finally:
+                print("Server conected to RP")
                 rp_socket.close()
 
     # Metodo responsavel por receber tanto os pedidos de Streams como os pedidos de parar 
@@ -55,9 +58,12 @@ class ServerGUI:
                 server_socket.listen()
                 while True:
                     conn, _ = server_socket.accept()
-                    data = conn.recv(1024)
-                    if not data:break
-                    mensagem = data.decode('utf-8')
+                    size = conn.recv(4)
+                    msg_size = int.from_bytes(size, byteorder='big')
+
+                    msg_data = conn.recv(msg_size)
+                    mensagem = msg_data.decode('utf-8')
+
                     if "Start Stream- " in mensagem:
                         stream_name = extrair_texto(mensagem)
                         self.streamList[stream_name] = "Asked"

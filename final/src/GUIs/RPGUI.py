@@ -198,7 +198,12 @@ class RPGUI:
     # e avisa ainda o servidor no caso de não exitir nenhum cliente a assistir 
     def initialClientConn(self, conn, addr):
         try:
-            mensagem = conn.recv(1024).decode('utf-8')
+            size = conn.recv(4)
+            msg_size = int.from_bytes(size, byteorder='big')
+
+            msg_data = conn.recv(msg_size)
+            mensagem = msg_data.decode('utf-8')
+                    
 
             if mensagem == "VideoList":
                 if not self.streamList:
@@ -208,9 +213,19 @@ class RPGUI:
                     msg = ""
                     for stream in self.streamList.keys():
                         msg += stream+"/"    
-                    conn.sendall(msg.encode('utf-8'))
+                    data = msg.encode('utf-8')
+                    dataToSend = (
+                        len(data).to_bytes(4,'big') +
+                        data
+                    )
+                    conn.sendall(dataToSend)
             
-                    recv_msg = conn.recv(1024).decode('utf-8')
+                    size = conn.recv(4)
+                    msg_size = int.from_bytes(size, byteorder='big')
+
+                    msg_data = conn.recv(msg_size)
+                    recv_msg = msg_data.decode('utf-8')
+                    
                     selectedStream = extrair_texto(recv_msg)
                     stream = self.streamList[selectedStream]
                     self.clients_logged[addr[0]] = selectedStream
@@ -254,8 +269,12 @@ class RPGUI:
     def initialServerConnection(self, conn, addr):
         try:
             # receber mensagens com a lista das streams
-            data = conn.recv(1024)
-            mensagem = data.decode('utf-8')
+            size = conn.recv(4)
+            msg_size = int.from_bytes(size, byteorder='big')
+
+            msg_data = conn.recv(msg_size)
+            mensagem = msg_data.decode('utf-8')
+                    
             if "-AND-" in mensagem:
                 lista_de_videos = mensagem.split('-AND-')
             else:

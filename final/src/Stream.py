@@ -52,7 +52,11 @@ class StreamController():
                 
                         msg = f"Start Stream- {self.name}"
                         data = msg.encode('utf-8')
-                        server_socket.send(data)
+                        dataToSend = (
+                            len(data).to_bytes(4, 'big') +
+                            data
+                        )
+                        server_socket.send(dataToSend)
                     except Exception as e:
                         print(f"Erro ao enviar o pedido de stream ao servidor: {e}")
                     finally:
@@ -108,8 +112,12 @@ class StreamController():
                     socket_server.connect(self.server_address)
 
                     mensagem = f"Stop Stream- {self.name}"
-                    socket_server.send(mensagem.encode('utf-8'))
-                    
+                    data = mensagem.encode('utf-8')
+                    dataToSend = (
+                        len(data).to_bytes(4, 'big') +
+                        data
+                    )
+                    socket_server.sendall(dataToSend)
                     socket_server.close()
         except Exception as e:
             print("Erro ao remover o caminho para o cliente que deu dsiconnect: ", e)

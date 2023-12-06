@@ -95,10 +95,10 @@ class NodeOverlayGUI:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 try:
                     s.connect((adj, NodeData.getNodePort(self.node)))
-                    #print(f"send: {mensagem} to: {adj}")
+                    data = mensagem.encode('utf-8')
                     msg = (
-                        len(mensagem).to_bytes(4, 'big') +
-                        mensagem.encode('utf-8')
+                        len(data).to_bytes(4, 'big') +
+                        data
                     )
                     s.sendall(msg)
                 except Exception as e:
