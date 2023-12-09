@@ -208,7 +208,11 @@ class RPGUI:
             if mensagem == "VideoList":
                 if not self.streamList:
                     noVidmsg = "I DONT HAVE STREAMS"
-                    conn.sendall(noVidmsg.encode('utf-8'))
+                    data = (
+                        len(noVidmsg.encode('utf-8')).to_bytes(4, 'big') +
+                        noVidmsg.encode('utf-8')
+                    )
+                    conn.sendall(data)
                 else:
                     msg = ""
                     for stream in self.streamList.keys():

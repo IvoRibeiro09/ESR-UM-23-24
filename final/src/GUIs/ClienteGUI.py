@@ -63,8 +63,9 @@ class ClienteGUI:
                 self.askStreamTransmission(vids)
 
                 # Enviar a escolha para o RP
-                mensagem = f"Stream- {self.selected}"
-                rp_socket.sendall((mensagem).encode('utf-8'))
+                msg = f"Stream- {self.selected}".encode('utf-8')
+                dataToSend = (len(msg).to_bytes(4,'big')+msg)
+                rp_socket.sendall(dataToSend)
                 
         except Exception as e:
             print(f"Erro ao conectar ou enviar mensagens: {e}")
